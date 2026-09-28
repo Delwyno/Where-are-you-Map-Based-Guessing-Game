@@ -444,6 +444,26 @@ function genTerrain(rand){
     }
     made++;
   }
+  // rain erosion: thousands of droplets run downhill, cutting gullies and dropping silt in the hollows
+  { const drops=Math.round(N*N*0.9), inertia=0.08, capF=2.2, minCap=0.02, depR=0.3, eroR=0.22, evap=0.035, grav=4, R=2;
+    const disc=[]; let wsum=0; for(let b=-R;b<=R;b++) for(let a=-R;a<=R;a++){ const w=Math.max(0,R+0.5-Math.hypot(a,b)); if(w>0){ disc.push([a,b,w]); wsum+=w; } }
+    const samp=(x,y)=>{ const i=x|0, j=y|0, u=x-i, v=y-j, k=j*N+i, a=H[k], b=H[k+1], c=H[k+N], d=H[k+N+1];
+      return [(b-a)*(1-v)+(d-c)*v,(c-a)*(1-u)+(d-b)*u,a*(1-u)*(1-v)+b*u*(1-v)+c*(1-u)*v+d*u*v]; };
+    for(let q=0;q<drops;q++){
+      let x=2+rand()*(N-5), y=2+rand()*(N-5), dx=0, dy=0, sp=1, w=1, sed=0;
+      if(H[(y|0)*N+(x|0)]<6) continue;   // no rain erosion on the sea
+      for(let st=0;st<32;st++){
+        const i=x|0, j=y|0, u=x-i, v=y-j, k=j*N+i, [gx,gy,h]=samp(x,y);
+        dx=dx*inertia-gx*(1-inertia); dy=dy*inertia-gy*(1-inertia); const L=Math.hypot(dx,dy); if(L<1e-6) break; dx/=L; dy/=L;
+        const nx=x+dx, ny=y+dy; if(nx<2||ny<2||nx>=N-3||ny>=N-3) break;
+        const dh=samp(nx,ny)[2]-h, cap=Math.max(-dh,minCap)*sp*w*capF;
+        if(sed>cap||dh>0){ const amt=dh>0?Math.min(dh,sed):(sed-cap)*depR; sed-=amt;
+          H[k]+=amt*(1-u)*(1-v); H[k+1]+=amt*u*(1-v); H[k+N]+=amt*(1-u)*v; H[k+N+1]+=amt*u*v; }
+        else { const amt=Math.min((cap-sed)*eroR,-dh); for(const [a,b,wt] of disc){ const kk=(j+b)*N+(i+a); if(H[kk]>4) H[kk]-=amt*wt/wsum; } sed+=amt; }
+        sp=Math.sqrt(Math.max(0,sp*sp+dh*grav)); w*=1-evap; x=nx; y=ny;
+      }
+    }
+  }
   // crags: sharp rock steps across some hillsides
   crags=[];
   const nCr=rand()<0.35?0:1+Math.floor(rand()*3);
@@ -734,7 +754,39 @@ let H0=null, N0=0, REAL=null, CH=null, G=null, lakes=[], cliffs=[], rails=[], ro
 // messages over the 3D view while a place loads, or if it can't be loaded
 function vmsg(html){ const er=$('#err'); if(!html){ if(!er.dataset.fatal) er.style.display='none'; return; } er.style.display='grid'; er.innerHTML='<div>'+html+'</div>'; }
 function loadFailMsg(id,want){ if(want&&settings.play!==want) return; vmsg(`<b>${tx('loadFail')}</b><br><small style="opacity:.8">Ffeil ar goll:  eryri/${id}.json</small>`); $('#status').innerHTML=`<b>${tx('loadFail')}</b>`; }
-const ERYC={};   // place data by id, loaded when first needed
+const ERYC={}, PREP={}, FARC={}; let ENEXT=null;
+// colours of the 12 km surround for a place (they never change), worked out once
+function farColours(id,CHh,CHm,n,half){
+  const bc=new Float32Array(n*n*3), step=2*half/(n-1), ao=AOC['c'+id];
+  for(let j=0;j<n;j++) for(let i=0;i<n;i++){ const k=j*n+i, x=-half+i*step, z=-half+j*step;
+    if(Math.abs(x)<HALF-1&&Math.abs(z)<HALF-1) continue;
+    const cm=CHm[k], wet=cm===1, h=CHh[k]-(wet?1.5:0)+(cm===2?9:cm===3?6:0);
+    const g=Math.hypot(CHh[j*n+Math.min(n-1,i+1)]-CHh[j*n+Math.max(0,i-1)],CHh[Math.min(n-1,j+1)*n+i]-CHh[Math.max(0,j-1)*n+i])/(2*step);
+    const c=groundColourReal(x,z,h,g,wet,cm), o=ao&&!wet?ao[k]:1; bc[k*3]=c[0]*o; bc[k*3+1]=c[1]*o; bc[k*3+2]=c[2]*o; }
+  return bc;
+}
+const idle=f=>('requestIdleCallback' in window)?requestIdleCallback(f,{timeout:3000}):setTimeout(f,250);
+// the heavy, place-only work: decode the heights, upsample them, and the sky-visibility shading
+function prepPlace(D){
+  if(PREP[D.id]||!D) return; const P=PREP[D.id]={}, n=D.n, cs=2*D.half/(n-1);
+  const steps=[
+    ()=>{ P.Hdec=decodeGrid(D.h,n,D.hmin); },
+    ()=>{ const H1=P.Hdec, n2=2*n-1, U=new Float32Array(n2*n2), cr=(a,b,c,d)=>(-a+9*b+9*c-d)/16, cl=q=>Math.max(0,Math.min(n-1,q));
+      for(let j=0;j<n;j++){ const r=2*j*n2; for(let i=0;i<n;i++) U[r+2*i]=H1[j*n+i]; for(let i=0;i<n-1;i++) U[r+2*i+1]=cr(H1[j*n+cl(i-1)],H1[j*n+i],H1[j*n+i+1],H1[j*n+cl(i+2)]); }
+      for(let j=0;j<n-1;j++) for(let i=0;i<n2;i++){ const g=q=>U[2*cl(q)*n2+i]; U[(2*j+1)*n2+i]=cr(g(j-1),g(j),g(j+1),g(j+2)); }
+      P.Hup=U; },
+    ()=>{ P.CHh=decodeGrid(D.c.h,D.c.n,D.c.hmin); },
+    ()=>{ if(!AOC['f'+D.id]) AOC['f'+D.id]=aoGrid(P.Hdec,n,cs,160); },
+    ()=>{ if(!AOC['c'+D.id]) AOC['c'+D.id]=aoGrid(P.CHh,D.c.n,2*D.c.half/(D.c.n-1),1500); },
+    ()=>{ const cn=D.c.n, m=new Uint8Array(cn*cn); let k=0; for(let q=0;q<D.c.m.length;q+=2){ m.fill(D.c.m[q],k,k+D.c.m[q+1]); k+=D.c.m[q+1]; } if(!FARC[D.id]) FARC[D.id]=farColours(D.id,P.CHh,m,cn,D.c.half); },
+  ];
+  const run=()=>{ const st=steps.shift(); if(!st) return; st(); idle(run); }; idle(run);
+}
+function queueNext(){   // pick the next random place now, fetch it and prepare it in quiet moments
+  const pool=ERY.filter(e=>e.id!==S.eLast); ENEXT=pool[Math.floor(Math.random()*pool.length)].id;
+  const id=ENEXT; for(const k in PREP) if(k!==id) delete PREP[k]; for(const k in FARC) if(k!==id&&!(REAL&&k===REAL.id)) delete FARC[k];
+  loadPlace(id).then(d=>idle(()=>prepPlace(d))).catch(()=>{});
+}   // place data by id, loaded when first needed
 let ERYALL=null;
 async function loadPlace(id){
   if(ERYC[id]) return ERYC[id];
@@ -770,10 +822,11 @@ function gridSq(E,Nn){ const e=Math.floor(E/100000), n=Math.floor(Nn/100000); le
 function genReal(D,rand){
   REAL=D; N=D.n; SIZE=2*D.half; HALF=D.half; CS=SIZE/(N-1);
   seaSide=-1; BASE=0; gNoise=gNoise||makeNoise(mulberry32(7));
-  H=decodeGrid(D.h,N,D.hmin);
+  const PP=PREP[D.id]; H=PP&&PP.Hdec?PP.Hdec.slice():decodeGrid(D.h,N,D.hmin);
   // keep the original grid (lakes flattened) for the map contours and the ambient occlusion: same map as before, and quicker
   H0=H.slice(); N0=N; for(const lk of D.lakes) rasterRings(lk.r,k=>{ H0[k]=Math.min(H0[k],lk.l-1.2); });
-  { // Catmull-Rom 2x upsample: smoother slopes and room for fine detail (7.5 m -> 3.75 m cells)
+  if(PP&&PP.Hup){ H=PP.Hup.slice(); N=2*N-1; CS=SIZE/(N-1); }
+  else { // Catmull-Rom 2x upsample: smoother slopes and room for fine detail (7.5 m -> 3.75 m cells)
     const n2=2*N-1, U=new Float32Array(n2*n2), cr=(a,b,c,d)=>(-a+9*b+9*c-d)/16, cl=q=>Math.max(0,Math.min(N-1,q));
     for(let j=0;j<N;j++){ const r=2*j*n2; for(let i=0;i<N;i++) U[r+2*i]=H[j*N+i];
       for(let i=0;i<N-1;i++) U[r+2*i+1]=cr(H[j*N+cl(i-1)],H[j*N+i],H[j*N+i+1],H[j*N+cl(i+2)]); }
@@ -781,7 +834,7 @@ function genReal(D,rand){
     H=U; N=n2; CS=SIZE/(N-1);
   }
   C=new Float32Array(N*N); M=new Uint8Array(N*N);
-  const cn=D.c.n; CH={half:D.c.half,n:cn,step:2*D.c.half/(cn-1),h:decodeGrid(D.c.h,cn,D.c.hmin),m:new Uint8Array(cn*cn)};
+  const cn=D.c.n; CH={half:D.c.half,n:cn,step:2*D.c.half/(cn-1),h:PP&&PP.CHh?PP.CHh:decodeGrid(D.c.h,cn,D.c.hmin),m:new Uint8Array(cn*cn)};
   { let k=0; const m=D.c.m; for(let q=0;q<m.length;q+=2){ CH.m.fill(m[q],k,k+m[q+1]); k+=m[q+1]; } }   // 1 lake/sea, 2 conifer, 3 broadleaf wood
   // lakes: each one flat at its own surface level, with the bed dropped just below it
   lakes=D.lakes;
@@ -831,7 +884,7 @@ function genReal(D,rand){
     const sf=(N-1)/(N0-1); for(const c of contours) for(let q=0;q<c.segs.length;q++) c.segs[q]*=sf; }   // grid units of the 2x grid, which the map uses
   // micro-relief for the 3D view only (added after the contours, so the map stays clean):
   // hummocky grass, broken ground on steep slopes and scree, nothing on water, roads or buildings
-  for(let j=1;j<N-1;j++) for(let i=1;i<N-1;i++){ const k=j*N+i; if(M[k]&(1|2|8|16)) continue;
+  for(let j=1;j<N-1;j++) for(let i=1;i<N-1;i++){ const k=j*N+i; if(M[k]&(1|2|8|16|128)) continue;
     const x=gx2w(i), z=gx2w(j), a=0.2+0.85*smooth(0.45,1.2,G[k])+((M[k]&64)?0.35:0);
     H[k]+=a*(0.6*gNoise(x/7.3+11,z/7.3)+0.4*gNoise(x/3.3,z/3.3+23)); }
   shore=[];
@@ -847,9 +900,11 @@ function genReal(D,rand){
   for(let j=2;j<N;j+=4)for(let i=2;i<N;i+=4){ const k=j*N+i; if(M[k]&16){ const lk=lakes.find(l=>inRings(gx2w(i),gx2w(j),l.r)); feats.push([gx2w(i),gx2w(j),(lk?lk.l:H[k])+0.3]); } }
   buildings.forEach(b=>feats.push([b.x,b.z,hAt(b.x,b.z)+b.h+2]));
   if(trig) feats.push([trig.x,trig.z,hAt(trig.x,trig.z)+1.4]);
+  carveRivers();
 }
 const PAST=[0.29,0.41,0.16], ROUGH=[0.44,0.44,0.24], MOOR=[0.45,0.38,0.26], HIGHG=[0.49,0.48,0.36], SCREE=[0.47,0.47,0.455], CRAG=[0.37,0.365,0.355];
-function groundColourReal(x,z,h,grade,wet,cm){
+function groundColourReal(x,z,h,grade,wet,cm){ if(wet||cm===2||cm===3) return groundColourReal0(x,z,h,grade,wet,cm); return veg(groundColourReal0(x,z,h,grade,wet,cm),x,z,h,grade,true); }
+function groundColourReal0(x,z,h,grade,wet,cm){
   if(wet) return [0.25,0.36,0.44];
   if(cm===2||cm===3){ const f=1+0.1*cNoise(x/60,z/60); return cm===2?[0.13*f,0.22*f,0.13*f]:[0.2*f,0.29*f,0.14*f]; }
   const t=smooth(110,650,h); let c=mix(PAST,ROUGH,t);
@@ -868,7 +923,7 @@ let renderer, scene, camera, round=null, sun, hemi, fog;
 const LOW=[0.24,0.34,0.14], HIGH=[0.52,0.50,0.26], SAND=[0.62,0.57,0.40], BED=[0.30,0.30,0.24];
 const HAY=[0.50,0.50,0.22], HEATH=[0.40,0.30,0.27], ROCK=[0.50,0.49,0.45], BOG=[0.20,0.27,0.13];
 const mix=(a,b,t)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
-let grassTex=null, stoneTex=null, cNoise=null, rockTex=null, matNear=null, matFar=null, matWater=null;
+let grassTex=null, stoneTex=null, cNoise=null, rockTex=null, matNear=null, matFar=null, matWater=null, matStream=null;
 const waterSky={value:null};
 function makeRockTex(){
   const S=256, cv=document.createElement('canvas'); cv.width=cv.height=S; const x=cv.getContext('2d'), r=mulberry32(4711);
@@ -911,13 +966,17 @@ function makeGroundMat(far){
   };
   return m;
 }
-function makeWaterMat(){
-  const m=new THREE.MeshPhongMaterial({color:0x2c4d61,specular:0x8aa4b8,shininess:90,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
-  m.userData.keep=true;
+function makeWaterMat(stream){
+  const m=new THREE.MeshPhongMaterial({color:stream?0x233b47:0x2c4d61,specular:0x8aa4b8,shininess:90,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
+  m.userData.keep=true; if(stream) m.defines={STREAM:1};
   m.onBeforeCompile=sh=>{ sh.uniforms.uSky=waterSky;
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 uSky;')
       .replace('#include <fog_fragment>',`float fres=pow(1.0-clamp(abs(dot(normalize(vViewPosition),normal)),0.0,1.0),3.0);
+        #ifdef STREAM
+        gl_FragColor.rgb=mix(gl_FragColor.rgb,uSky,0.04+0.4*fres);
+        #else
         gl_FragColor.rgb=mix(gl_FragColor.rgb,uSky,0.12+0.78*fres);
+        #endif
         #include <fog_fragment>`); };
   return m;
 }
@@ -972,6 +1031,19 @@ const OLV=[
  {place:'rhinogfawr',n:6,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su sj xs wc kn'},
  {place:'carneddau',n:6,show:false,wx:'mist',leg:[150,320],jump:150,types:'pj su sj xs wc kn'},
 ];
+let tuftTex=null;
+function grassAt(x0,z0){
+  const g=S.grass; if(!g) return; const r=mulberry32(((x0*73856093)^(z0*19349663))>>>0), m4=new THREE.Matrix4(), q=new THREE.Quaternion(), p=new THREE.Vector3(), sc=new THREE.Vector3(), col=new THREE.Color(), up=new THREE.Vector3(0,1,0); let n=0;
+  for(let t=0;t<9000&&n<g.instanceMatrix.count;t++){
+    const d=2+Math.pow(r(),1.6)*44, a=r()*Math.PI*2, x=x0+Math.cos(a)*d, z=z0+Math.sin(a)*d;
+    if(Math.abs(x)>HALF-2||Math.abs(z)>HALF-2) continue;
+    if(maskAt(x,z)&(1|2|4|8|16|64|128)) continue;
+    const h=hAt(x,z), gr=Math.hypot(hAt(x+2,z)-hAt(x-2,z),hAt(x,z+2)-hAt(x,z-2))/4; if(gr>0.9) continue;
+    const c=REAL?groundColourReal(x,z,h,gr,false,0):groundColour(x,z,Math.min(h,LAND+maxH),gr); if(!(c[1]>c[2]+0.03)) continue;
+    const s=0.45+r()*0.6; p.set(x,h-0.05,z); q.setFromAxisAngle(up,r()*Math.PI); sc.set(s*1.3,s*(0.8+r()*0.5),s*1.3); m4.compose(p,q,sc); g.setMatrixAt(n,m4);
+    g.setColorAt(n,col.setRGB(Math.min(1,c[0]*1.25),Math.min(1,c[1]*1.3),Math.min(1,c[2]*1.1))); n++; }
+  g.count=n; g.instanceMatrix.needsUpdate=true; if(g.instanceColor) g.instanceColor.needsUpdate=true;
+}
 let olv=load('way-orient',{cur:1,open:1,best:{},stars:{}}), OL=null, LH0=null, kiteTex=null;
 const fmtT=s=>{ s=Math.round(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
 function segDist(px,pz,ax,az,bx,bz){ const dx=bx-ax, dz=bz-az, L2=dx*dx+dz*dz||1, t=Math.max(0,Math.min(1,((px-ax)*dx+(pz-az)*dz)/L2)); return Math.hypot(px-ax-dx*t,pz-az-dz*t); }
@@ -1064,7 +1136,7 @@ function orientTap(cx,cy){
   const t0=performance.now(), dur=Math.min(750,250+d*2.2); S.gliding=true;
   const step=now=>{ const u=Math.min(1,(now-t0)/dur), e=u<.5?2*u*u:1-2*(1-u)*(1-u); S.viewPos={x:lerp(x0,hit[0],e),z:lerp(z0,hit[1],e)}; placeCamera();
     if(u<1) return requestAnimationFrame(step);
-    S.gliding=false; S.otime+=c.t+5; S.route.push(hit);
+    S.gliding=false; S.otime+=c.t+5; S.route.push(hit); grassAt(hit[0],hit[1]);
     while(S.ci<S.oc.ctrls.length){ const k=S.oc.ctrls[S.ci]; if(segDist(k[0],k[1],x0,z0,hit[0],hit[1])>S.oc.punch) break;
       S.splits.push(S.otime-S.lastPunch); S.lastPunch=S.otime; S.ci++;
       if(S.ci>=S.oc.ctrls.length){ orientFinish(); return; } otoast(tx('oPunch',{n:S.ci})); }
@@ -1081,6 +1153,15 @@ function orientFinish(){
   showPop('good','✓',tx('oDone'),'★'.repeat(st)+'☆'.repeat(3-st),tx('oTime',{t:fmtT(t),p:fmtT(par)}),
     [[$('#next').textContent,()=>$('#next').click(),true],[tx('oTry'),()=>{ S.oAdvance=false; newRound(); }],[tx('oRoute'),null]]);
 }
+let RC=null;   // how deep the stream channel was cut at each grid point
+function carveRivers(){
+  RC=new Float32Array(N*N);
+  for(const r of rivers){ const w=r.w||3, rr=w/2+2.5, dep=w<4?0.7:1.3, R=Math.ceil(rr/CS)+1;
+    for(const p of dens(r,Math.max(1.5,CS*0.8))){ const i0=Math.round((p[0]+HALF)/CS), j0=Math.round((p[1]+HALF)/CS);
+      for(let j=j0-R;j<=j0+R;j++) for(let i=i0-R;i<=i0+R;i++){ if(i<0||j<0||i>=N||j>=N) continue;
+        const dd=Math.hypot(i*CS-HALF-p[0],j*CS-HALF-p[1]); if(dd>=rr) continue; const c=dep*(1-(dd/rr)*(dd/rr)), k=j*N+i; if(c>RC[k]) RC[k]=c; } } }
+  for(let k=0;k<N*N;k++) if(RC[k]>0&&!(M[k]&16)&&H[k]-RC[k]>0.2) H[k]-=RC[k];
+}
 function aoGrid(h,n,cs,maxD){
   const out=new Float32Array(n*n), R=[[1,0],[-1,0],[0,1],[0,-1],[.707,.707],[.707,-.707],[-.707,.707],[-.707,-.707]], ds=[];
   for(let d=cs;d<=maxD;d*=1.7) ds.push(d);
@@ -1089,7 +1170,15 @@ function aoGrid(h,n,cs,maxD){
     out[k]=Math.min(1.05,Math.max(0.62,1.05-0.85*occ/8)); }
   return out;
 }
-function groundColour(x,z,h,grade){
+// moorland patches: rusty bracken on the lower slopes, dark heather on the tops; only on grassy ground
+function veg(c,x,z,h,grade,real){
+  if(!cNoise||!(c[1]>c[2]+0.04)||grade>0.85) return c;
+  const hs=real?1:0.18, br=smooth(0.15,0.45,cNoise(x/85+140,z/85+60))*smooth(0.12,0.3,grade)*(1-smooth(380*hs,520*hs,h)),
+        he=smooth(0.2,0.5,cNoise(x/120+20,z/120+170))*smooth(250*hs,420*hs,h)*(1-smooth(0.7,0.95,grade));
+  let o=mix(c,[0.47,0.33,0.19],br*0.5); o=mix(o,[0.33,0.27,0.25],he*0.45); return o;
+}
+function groundColour(x,z,h,grade){ return veg(groundColour0(x,z,h,grade),x,z,h,grade,false); }
+function groundColour0(x,z,h,grade){
   if(REAL) return groundColourReal(x,z,h,grade,false);
   const t=Math.pow(Math.min(1,Math.max(0,(h-LAND)/Math.max(60,maxH-LAND))),0.8);
   let c=mix(LOW,HIGH,t);
@@ -1155,21 +1244,42 @@ function initThree(){
   waterSky.value=new THREE.Color(0xd5dee2);
   fog=new THREE.Fog(0xcccccc,700,6500); scene.fog=fog;
   grassTex=makeGrassTex(); stoneTex=makeStoneTex(); rockTex=makeRockTex(); cNoise=makeNoise(mulberry32(4242));
-  matNear=makeGroundMat(false); matFar=makeGroundMat(true); matWater=makeWaterMat();
+  matNear=makeGroundMat(false); matFar=makeGroundMat(true); matWater=makeWaterMat(); matStream=makeWaterMat(true);
   scene.add(new THREE.Mesh(wg,matWater));
 }
 function dens(pts,step){ const o=[pts[0]]; for(let k=1;k<pts.length;k++){ const a=pts[k-1], b=pts[k], L=Math.hypot(b[0]-a[0],b[1]-a[1]), n=Math.max(1,Math.ceil(L/step)); for(let q=1;q<=n;q++) o.push([lerp(a[0],b[0],q/n),lerp(a[1],b[1],q/n)]); } return o; }
-function ribbon(pts,w,yfn,color){
-  const pos=[],idx=[];
+let pathTex=null, roadTex=null;
+function stripTex(kind){   // 64 px across, 512 px along; ragged see-through edges so the line isn't ruler-straight
+  const W=64, L=512, cv=document.createElement('canvas'); cv.width=W; cv.height=L; const x=cv.getContext('2d'), r=mulberry32(kind==='path'?31:57);
+  const wav=(y,a)=>a[0]*Math.sin(y*0.021+a[1])+a[2]*Math.sin(y*0.067+a[3])+a[4]*Math.sin(y*0.19+a[5]);
+  const A=[r()*.5+.3,r()*6,r()*.3+.15,r()*6,r()*.2+.08,r()*6], B=[r()*.5+.3,r()*6,r()*.3+.15,r()*6,r()*.2+.08,r()*6];
+  const img=x.createImageData(W,L), d=img.data, path=kind==='path';
+  for(let y=0;y<L;y++){ const half=(path?0.3:0.44)+(path?0.1:0.03)*wav(y,A), cen=0.5+(path?0.06:0.01)*wav(y,B);
+    for(let i=0;i<W;i++){ const u=i/W, e=Math.abs(u-cen)/half, o=(y*W+i)*4, n=r();
+      let a=e<1?255:0; if(e>0.8&&e<1.12) a=r()<(1.12-e)/0.32?255:0;
+      let c=path?[118+n*30,102+n*26,80+n*20]:[84+n*16,84+n*16,82+n*15];
+      if(path&&r()<0.05) c=[165+n*40,160+n*40,150+n*35];          // pebbles
+      if(path&&e>0.7&&r()<0.25) c=[96,112,62];                     // grass creeping in at the edges
+      if(path&&Math.abs(u-cen)<0.05&&r()<0.5) c=c.map(v=>v*0.85);  // worn line down the middle
+      if(!path&&e>0.85) c=c.map(v=>v*1.12);                        // lighter, broken tarmac edge
+      d[o]=c[0]; d[o+1]=c[1]; d[o+2]=c[2]; d[o+3]=a; } }
+  x.putImageData(img,0,0);
+  const t=new THREE.CanvasTexture(cv); t.wrapS=THREE.ClampToEdgeWrapping; t.wrapT=THREE.RepeatWrapping; t.anisotropy=renderer.capabilities.getMaxAnisotropy(); return t;
+}
+function ribbon(pts,w,yfn,color,uvLen,shadeFn){
+  const pos=[],idx=[],uv=[],vc=[]; let run=0;
   for(let k=0;k<pts.length;k++){
     const a=pts[Math.max(0,k-1)], b=pts[Math.min(pts.length-1,k+1)];
     let tx=b[0]-a[0], tz=b[1]-a[1]; const l=Math.hypot(tx,tz)||1; tx/=l; tz/=l;
     const nx=-tz*w/2, nz=tx*w/2, L=[pts[k][0]+nx,pts[k][1]+nz], R=[pts[k][0]-nx,pts[k][1]-nz];
-    pos.push(L[0],yfn(L,pts[k]),L[1], R[0],yfn(R,pts[k]),R[1]);
+    const yl=yfn(L,pts[k]), yr=yfn(R,pts[k]); pos.push(L[0],yl,L[1], R[0],yr,R[1]);
+    if(shadeFn){ const a=shadeFn(L[0],yl,L[1]), b=shadeFn(R[0],yr,R[1]); vc.push(a,a,a,b,b,b); }
+    if(k>0) run+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]); uv.push(0,run/(uvLen||10),1,run/(uvLen||10));
     if(k>0){const q=2*(k-1); idx.push(q,q+2,q+1, q+1,q+2,q+3);}
   }
-  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals();
-  return new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); if(shadeFn) g.setAttribute('color',new THREE.Float32BufferAttribute(vc,3)); g.setIndex(idx); g.computeVertexNormals();
+  const mat=(typeof color==='object')?color:new THREE.MeshLambertMaterial({color,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+  return new THREE.Mesh(g,mat);
 }
 function buildScene(rand){
   if(round){ scene.remove(round); round.traverse(o=>{if(o.geometry)o.geometry.dispose(); if(o.material&&!o.material.userData.keep)o.material.dispose();}); }
@@ -1188,23 +1298,28 @@ function buildScene(rand){
   if(st===2){ const avg=(k,a,b)=>{ for(let q=0;q<3;q++) cols[k*3+q]=(cols[a*3+q]+cols[b*3+q])/2; shd[k]=(shd[a]+shd[b])/2; };
     for(let j=0;j<N;j+=2) for(let i=1;i<N;i+=2) avg(j*N+i,j*N+i-1,j*N+i+1);
     for(let j=1;j<N;j+=2) for(let i=0;i<N;i++) avg(j*N+i,(j-1)*N+i,(j+1)*N+i); }
-  for(let k=0;k<N*N;k++){ const o=AO[k]; cols[k*3]*=o; cols[k*3+1]*=o; cols[k*3+2]*=o; }
+  for(let k=0;k<N*N;k++){ let o=AO[k]; const rc=RC&&RC[k]>0?Math.min(1,RC[k]/0.6):0; if(rc){ o*=1-0.3*rc; cols[k*3]*=1-0.12*rc; cols[k*3+2]*=1-0.1*rc; }
+    cols[k*3]*=o; cols[k*3+1]*=o; cols[k*3+2]*=o; }
   geo.setAttribute('color',new THREE.BufferAttribute(cols,3)); geo.setAttribute('shade',new THREE.BufferAttribute(shd,1)); geo.computeVertexNormals(); scaleUV(geo,SIZE/26);
   round.add(new THREE.Mesh(geo,matNear));
   const BS=REAL?2*CH.half:13200, BN=REAL?CH.n-1:220, bg=new THREE.PlaneGeometry(BS,BS,BN,BN); bg.rotateX(-Math.PI/2);
-  const bsh=new Float32Array((BN+1)*(BN+1)).fill(1), bp=bg.attributes.position, bc=new Float32Array((BN+1)*(BN+1)*3), BAO=REAL?(AOC['c'+REAL.id]||(AOC['c'+REAL.id]=aoGrid(CH.h,CH.n,CH.step,1500))):null;
+  const bsh=new Float32Array((BN+1)*(BN+1)).fill(1), bp=bg.attributes.position, bc=new Float32Array((BN+1)*(BN+1)*3), BAO=REAL?(AOC['c'+REAL.id]||(AOC['c'+REAL.id]=aoGrid(CH.h,CH.n,CH.step,1500))):null, FC=REAL?(FARC[REAL.id]||(FARC[REAL.id]=farColours(REAL.id,CH.h,CH.m,CH.n,CH.half))):null;
   for(let k=0;k<bp.count;k++){
     const x=bp.getX(k), z=bp.getZ(k);
     const inner=Math.abs(x)<HALF-1&&Math.abs(z)<HALF-1, cm=REAL&&!inner?CH.m[k]:0, wet=cm===1;
     const h=inner?-30:hAt(x,z)-(wet?1.5:0)+(cm===2?9:cm===3?6:0);   // woods stand up as a canopy on the skyline
-    bp.setY(k,h); if(REAL&&!inner&&!wet) bsh[k]=sunShade(SD,x,z,h);
+    bp.setY(k,h); if(REAL&&!inner&&!wet){ const bi=k%(BN+1), bj=(k/(BN+1))|0; bsh[k]=(bi%2||bj%2)?-1:sunShade(SD,x,z,h); }
+    if(REAL){ if(!inner){ bc[k*3]=FC[k*3]; bc[k*3+1]=FC[k*3+1]; bc[k*3+2]=FC[k*3+2]; } continue; }
     const g=Math.hypot(hAt(x+30,z)-hAt(x-30,z),hAt(x,z+30)-hAt(x,z-30))/60;
-    const c=REAL?groundColourReal(x,z,h,g,wet,cm):groundColour(x,z,Math.min(h,LAND+maxH),g), o=BAO&&!wet?BAO[k]:1; bc[k*3]=c[0]*o; bc[k*3+1]=c[1]*o; bc[k*3+2]=c[2]*o;
+    const c=groundColour(x,z,Math.min(h,LAND+maxH),g); bc[k*3]=c[0]; bc[k*3+1]=c[1]; bc[k*3+2]=c[2];
   }
+  for(let k=0;k<bsh.length;k++) if(bsh[k]<0){ const bi=k%(BN+1), bj=(k/(BN+1))|0; let s=0,c=0;
+    for(const [di,dj] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,1],[-1,1],[1,-1]]){ const a=bi+di,b=bj+dj; if(a<0||b<0||a>BN||b>BN||a%2||b%2) continue; const v=bsh[b*(BN+1)+a]; if(v>=0){s+=v;c++;} }
+    bsh[k]=c?s/c:1; }
   bg.setAttribute('color',new THREE.BufferAttribute(bc,3)); bg.setAttribute('shade',new THREE.BufferAttribute(bsh,1)); bg.computeVertexNormals(); scaleUV(bg,BS/26);
   round.add(new THREE.Mesh(bg,matFar));
   // rivers, roads, footpaths
-  for(const r of rivers) round.add(ribbon(r,r.w||6,(p,c)=>Math.max(0.08,hAt(c[0],c[1])+(r.w&&r.w<4?0.25:0.45)),0x4c7fa3));
+  for(const r of rivers){ const w=r.w||6; round.add(ribbon(dens(r,3),w<4?Math.max(1.6,w):w,(p,c)=>Math.max(0.08,hAt(c[0],c[1])+(w<4?0.22:0.4)),matStream,10)); }
   for(const r of rails) round.add(ribbon(r,2.6,(p)=>hAt(p[0],p[1])+0.25,0x4a463f));
   if(REAL){
     const wm=matWater;
@@ -1215,8 +1330,12 @@ function buildScene(rand){
       const lm=new THREE.Mesh(lg,wm); lm.position.y=lk.l+0.05; round.add(lm);
     }
   }
-  for(const r of roads) round.add(ribbon(dens(r,4),5,(p)=>hAt(p[0],p[1])+0.3,0x5b5a56));
-  for(const f of footpaths) round.add(ribbon(dens(f,3),1.2,(p)=>hAt(p[0],p[1])+0.14,0x6a6150));
+  if(!pathTex){ pathTex=stripTex('path'); roadTex=stripTex('road'); }
+  const lit=(x,y,z)=>0.5+0.5*sunShade(SD,x,z,y-0.1);
+  const pathM=new THREE.MeshLambertMaterial({vertexColors:true,map:pathTex,alphaTest:0.5,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}),
+        roadM=new THREE.MeshLambertMaterial({vertexColors:true,map:roadTex,alphaTest:0.5,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+  for(const r of roads) round.add(ribbon(dens(r,3),4.6,(p)=>hAt(p[0],p[1])+0.2,roadM,18,lit));
+  for(const f of footpaths) round.add(ribbon(dens(f,2.5),1.7,(p)=>hAt(p[0],p[1])+0.1,pathM,7,lit));
   // field walls: dry-stone walls with a stone texture, a slight batter and an uneven top
   if(walls.length){
     const wp=[],wc=[],wu=[],wi=[]; let base=0; const wr=mulberry32(99);
@@ -1325,7 +1444,7 @@ function applyWeather(rand){
 function viewFrom(x,z){ S.viewPos={x,z}; S.pitch=0;
   if(REAL){ const p=profile(x,z,S.deg).sort((a,b)=>a-b); S.pitch=Math.max(-11,Math.min(3,0.55*p[p.length>>1])); }
   S.pitch0=S.pitch;
-  placeCamera(); }
+  grassAt(x,z); placeCamera(); }
 function placeCamera(){
   updateCompass();
   if(!renderer||!S.viewPos) return;
@@ -1703,7 +1822,7 @@ function reveal(){
   save(); updateStats();
   viewFrom(S.truePos.x,S.truePos.z); drawMap(); updateChoices(); setTag(); updateTop();
 }
-const TX={f_xs:'Croesfan nant',f_wc:'Cornel wal',f_pb:'Tro yn y llwybr',f_kn:'Bryncyn',oHead:'Cyfeiriad ${b}',oHint:'Llusga i edrych · tapia’r tir i symud',oIntro:'Ymwela â’r pwyntiau yn eu trefn. Tapia’r tir yn yr olygfa i symud yno.',oCtrl:'Pwynt ${n} o ${t}',oFinish:'Diwedd',f_pj:'Cyffordd llwybrau',f_su:'Copa',f_le:'Pen y llyn',f_sj:'Cymer nentydd',f_cf:'Troed y graig',oPeek:'Ble ydw i? (+30 e)',oSky:'Tapia ar y tir i symud',oEdge:'Mae hynny oddi ar ymyl y map',oFar:'Rhy bell: hyd at ${m} m ar y tro',oWater:'Does dim modd croesi dŵr',oSteep:'Rhy serth: chwilia am ffordd arall',oBlock:'Does dim modd mynd y ffordd honno',oPunch:'Pwynt ${n} ✓',oDone:'Cwrs wedi’i gwblhau!',oTime:'Dy amser ${t} · par ${p}',oRoute:'Gweld fy llwybr',oTry:'Rho gynnig arall',oLevel:'Cwrs ${n}',oShown:'safle i’w weld',oHidden:'safle wedi’i guddio',oNext:'Nesaf: cwrs ${n}',oAgain:'Rhedeg eto',oRestart:'Ailddechrau’r cwrs',oStats:'${n} o ${t} cwrs wedi’u gorffen · ${s} ★',oStats0:'Cyfeiriannu: 20 cwrs, yn mynd yn anoddach.',oFail:'Methu gosod cwrs yma. Rho gynnig arall.',cmp:'Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant',cmpHint:'Tapia ddau bwynt i fesur cyfeiriant',loading:'Wrthi’n llwytho ${n}…',loadFail:'Methu llwytho’r lle hwn. Gwiria dy gysylltiad a rho gynnig arall.',correct:'Cywir!',start:'Dyna ddechrau rhediad.',row:'Dyna ${n} yn olynol!',best:' Dy orau erioed.',again:'Cywir y tro yma. Mae dy rediad yn ailddechrau o’r un nesaf.',lvl:'Lefel ${n} wedi’i chwblhau.',wrongT:'Anghywir — rho gynnig arall',wrongM:'Doeddet ti ddim yn sefyll yn ${L}.',ends:' Dyna ddiwedd dy rediad o ${n}.',lvlWrong:'Roeddet ti yn ${T}, nid ${L}.',tryA:'Rho gynnig arall',show:'Dangos yr ateb',look:'Edrych o gwmpas',where:'Gweld ble roeddwn i',retry:'<b>Nid ${L}.</b><small>Rho gynnig ar fan arall, neu <button class="linkbtn" id="showAns" type="button">dangos yr ateb</button>.</small>',out:'${d} m allan, am ${p} pwynt.'};
+const TX={prep:'Wrthi’n paratoi’r lle nesaf…',f_xs:'Croesfan nant',f_wc:'Cornel wal',f_pb:'Tro yn y llwybr',f_kn:'Bryncyn',oHead:'Cyfeiriad ${b}',oHint:'Llusga i edrych · tapia’r tir i symud',oIntro:'Ymwela â’r pwyntiau yn eu trefn. Tapia’r tir yn yr olygfa i symud yno.',oCtrl:'Pwynt ${n} o ${t}',oFinish:'Diwedd',f_pj:'Cyffordd llwybrau',f_su:'Copa',f_le:'Pen y llyn',f_sj:'Cymer nentydd',f_cf:'Troed y graig',oPeek:'Ble ydw i? (+30 e)',oSky:'Tapia ar y tir i symud',oEdge:'Mae hynny oddi ar ymyl y map',oFar:'Rhy bell: hyd at ${m} m ar y tro',oWater:'Does dim modd croesi dŵr',oSteep:'Rhy serth: chwilia am ffordd arall',oBlock:'Does dim modd mynd y ffordd honno',oPunch:'Pwynt ${n} ✓',oDone:'Cwrs wedi’i gwblhau!',oTime:'Dy amser ${t} · par ${p}',oRoute:'Gweld fy llwybr',oTry:'Rho gynnig arall',oLevel:'Cwrs ${n}',oShown:'safle i’w weld',oHidden:'safle wedi’i guddio',oNext:'Nesaf: cwrs ${n}',oAgain:'Rhedeg eto',oRestart:'Ailddechrau’r cwrs',oStats:'${n} o ${t} cwrs wedi’u gorffen · ${s} ★',oStats0:'Cyfeiriannu: 20 cwrs, yn mynd yn anoddach.',oFail:'Methu gosod cwrs yma. Rho gynnig arall.',cmp:'Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant',cmpHint:'Tapia ddau bwynt i fesur cyfeiriant',loading:'Wrthi’n llwytho ${n}…',loadFail:'Methu llwytho’r lle hwn. Gwiria dy gysylltiad a rho gynnig arall.',correct:'Cywir!',start:'Dyna ddechrau rhediad.',row:'Dyna ${n} yn olynol!',best:' Dy orau erioed.',again:'Cywir y tro yma. Mae dy rediad yn ailddechrau o’r un nesaf.',lvl:'Lefel ${n} wedi’i chwblhau.',wrongT:'Anghywir — rho gynnig arall',wrongM:'Doeddet ti ddim yn sefyll yn ${L}.',ends:' Dyna ddiwedd dy rediad o ${n}.',lvlWrong:'Roeddet ti yn ${T}, nid ${L}.',tryA:'Rho gynnig arall',show:'Dangos yr ateb',look:'Edrych o gwmpas',where:'Gweld ble roeddwn i',retry:'<b>Nid ${L}.</b><small>Rho gynnig ar fan arall, neu <button class="linkbtn" id="showAns" type="button">dangos yr ateb</button>.</small>',out:'${d} m allan, am ${p} pwynt.'};
 const tx=(k,o={})=>TX[k].replace(/\$\{(\w+)\}/g,(m,v)=>o[v]);
 function showPop(kind,icon,title,streak,msg,btns){
   const p=$('#pop'); p.className='on '+kind; $('#popI').textContent=icon; $('#popT').textContent=title;
@@ -1785,7 +1904,9 @@ function newRound(){
   }
   else if(play==='eryri'){
     let P=ERY.find(e=>e.id===(S.ePend||settings.eplace));
+    if(!P&&ENEXT&&ENEXT!==S.eLast) P=ERY.find(e=>e.id===ENEXT);   // the place already fetched and prepared
     if(!P){ const pool=ERY.filter(e=>e.id!==S.eLast); P=pool[Math.floor(Math.random()*pool.length)]; }   // random, never the same place twice running
+    ENEXT=null;
     if(!ERYC[P.id]){
       $('#status').innerHTML=`<small>${tx('loading',{n:P.name})}</small>`;
       vmsg(tx('loading',{n:P.name})); loadPlace(P.id).then(()=>{ vmsg(''); S.ePend=P.id; newRound(); }).catch(()=>{ S.ePend=null; loadFailMsg(P.id,'eryri'); });
@@ -1805,7 +1926,7 @@ function newRound(){
     else {
       REAL=null; lakes=[]; cliffs=[]; rails=[]; rockP=[]; woodP=[]; places=[]; pathPts=[]; N=161; SIZE=1200; HALF=SIZE/2; CS=SIZE/(N-1);
       S.gridE=10+Math.floor(rand()*80); S.gridN=10+Math.floor(rand()*80);
-      genTerrain(rand);
+      genTerrain(rand); carveRivers();
       if(play==='orient') for(const fp of footpaths) markMask(dens(fp,6),128,3);   // paths are quicker to walk
     }
     let wk=D.weathers[Math.floor(rand()*D.weathers.length)];
@@ -1829,7 +1950,8 @@ function newRound(){
   document.querySelectorAll('.key [data-k]').forEach(el=>{el.style.display=has[el.dataset.k]?'':'none';});
   S.saz = S.wx===WEATHERS.evening ? (rand()<0.5?0.5:-0.5)*Math.PI+(rand()-.5)*0.8 : rand()*Math.PI*2;
   if(renderer){ buildScene(rand); applyWeather(rand); }
-  vmsg('');   // a round is ready: clear any loading message else $('#wxTag').textContent=S.wx.name;
+  vmsg('');   // a round is ready: clear any loading message
+  if(play==='eryri'&&settings.eplace==='random') queueNext(); else $('#wxTag').textContent=S.wx.name;
   viewFrom(truePt.x,truePt.z);
   drawMap(); updateChoices(); setTag(); updateStats(); updateTop();
   if(mode==='orient'){
@@ -1957,7 +2079,8 @@ function buildTabs(){
     b.innerHTML=`${l}<small>${sub}</small>`; b.onclick=()=>{ if(settings.play===v) return; settings.play=v; save(); buildTabs(); newRound(); }; el.appendChild(b);
   });
 }
-$('#next').onclick=()=>{ if(!$('#next').disabled) newRound(); };
+$('#next').onclick=()=>{ if($('#next').disabled) return;
+  if(settings.play==='eryri'){ vmsg(tx('prep')); requestAnimationFrame(()=>requestAnimationFrame(()=>newRound())); } else newRound(); };
 document.addEventListener('keydown',e=>{
   if(e.metaKey||e.ctrlKey||e.altKey||(e.target.closest&&e.target.closest('input,textarea,select'))) return;
   const k=e.key;
