@@ -1,6 +1,6 @@
 // Offline support for "Where are you?" / "Ble wyt ti?"
 // Keeps the pages, three.js and every Eryri place in the browser cache, so the game works with no signal.
-const V='way-77864075';   // change this (the build does) to make phones pick up a new version
+const V='way-39712161';   // change this (the build does) to make phones pick up a new version
 const CORE=['./','index.html','cy.html','manifest.webmanifest','manifest-cy.webmanifest','icon-192.png','icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
 const PLACES=["padarn", "gwynant", "crafnant", "beddgelert", "ogwen", "idwal", "cwmbychan", "llydaw", "rhydddu", "stwlan", "siabod", "cnicht", "ygarn", "cau", "nantlle", "glyderfach", "wyddfa", "aran", "cribgoch", "carneddau", "rhinogfawr", "llynhywel", "bodlyn", "arenig", "moelhebog", "cwmsilyn", "moeleilio", "dinas", "llagi", "glyderfawr", "dafydd", "cowlyd", "eigiau"];
