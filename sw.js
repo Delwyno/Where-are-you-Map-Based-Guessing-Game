@@ -1,11 +1,11 @@
 // Offline support for "Where are you?" / "Ble wyt ti?"
 // Keeps the pages, three.js and every Eryri place in the browser cache, so the game works with no signal.
-const V='way-17984785';   // change this (the build does) to make phones pick up a new version
+const V='way-8827019';   // change this (the build does) to make phones pick up a new version
 const CORE=['./','index.html','cy.html','manifest.webmanifest','manifest-cy.webmanifest','icon-192.png','icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
 const PLACES=["padarn", "gwynant", "crafnant", "beddgelert", "ogwen", "idwal", "cwmbychan", "llydaw", "rhydddu", "stwlan", "siabod", "cnicht", "ygarn", "cau", "nantlle", "glyderfach", "wyddfa", "aran", "cribgoch", "carneddau", "rhinogfawr", "llynhywel", "bodlyn", "arenig", "moelhebog", "cwmsilyn", "moeleilio", "dinas", "llagi", "glyderfawr", "dafydd", "cowlyd", "eigiau"];
 self.addEventListener('install',e=>{
-  e.waitUntil(caches.open(V).then(c=>Promise.allSettled(CORE.concat(PLACES.map(id=>'eryri/'+id+'.json')).map(u=>c.add(u)))));   // one failure doesn't stop the rest
+  e.waitUntil(caches.open(V).then(c=>Promise.allSettled(CORE.concat(PLACES.map(id=>'eryri/'+id+'.json'),PLACES.map(id=>id+'.json')).map(u=>c.add(u)))));   // one failure doesn't stop the rest
   self.skipWaiting();
 });
 self.addEventListener('activate',e=>{

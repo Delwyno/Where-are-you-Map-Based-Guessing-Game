@@ -733,7 +733,7 @@ const ERY=[
 let H0=null, N0=0, REAL=null, CH=null, G=null, lakes=[], cliffs=[], rails=[], rockP=[], woodP=[], places=[], pathPts=[];
 // messages over the 3D view while a place loads, or if it can't be loaded
 function vmsg(html){ const er=$('#err'); if(!html){ if(!er.dataset.fatal) er.style.display='none'; return; } er.style.display='grid'; er.innerHTML='<div>'+html+'</div>'; }
-function loadFailMsg(id){ vmsg(`<b>${tx('loadFail')}</b><br><small style="opacity:.8">Ffeil ar goll:  eryri/${id}.json</small>`); $('#status').innerHTML=`<b>${tx('loadFail')}</b>`; }
+function loadFailMsg(id,want){ if(want&&settings.play!==want) return; vmsg(`<b>${tx('loadFail')}</b><br><small style="opacity:.8">Ffeil ar goll:  eryri/${id}.json</small>`); $('#status').innerHTML=`<b>${tx('loadFail')}</b>`; }
 const ERYC={};   // place data by id, loaded when first needed
 let ERYALL=null;
 async function loadPlace(id){
@@ -745,7 +745,10 @@ async function loadPlace(id){
       for(const d of ERYALL) ERYC[d.id]=d; }
     return ERYC[id];
   }
-  const r=await fetch('eryri/'+id+'.json'); if(!r.ok) throw new Error('HTTP '+r.status);   // the website: one file per place
+  // the website: one file per place, in the eryri/ folder (or next to the page, if uploaded there)
+  let r=await fetch('eryri/'+id+'.json').catch(()=>null);
+  if(!r||!r.ok) r=await fetch(id+'.json').catch(()=>null);
+  if(!r||!r.ok) throw new Error('missing '+id);
   return ERYC[id]=await r.json();
 }
 function decodeGrid(d,n,hmin){ const a=new Float32Array(n*n); let v=0; for(let k=0;k<n*n;k++){ v+=d[k]; a[k]=hmin+v/10; } return a; }
@@ -948,26 +951,26 @@ function sunShade(sd,x,z,h0){
 // ---------- orienteering ----------
 // Twenty fixed courses on real places. Position shown on the first five, hidden after.
 const OLV=[
- {place:'padarn',n:4,show:true,wx:'clear',leg:[140,300],jump:150,types:'pj su le'},
- {place:'gwynant',n:4,show:true,wx:'clear',leg:[140,320],jump:150,types:'pj su le'},
- {place:'crafnant',n:4,show:true,wx:'clear',leg:[150,320],jump:150,types:'pj su le'},
- {place:'ogwen',n:5,show:true,wx:'evening',leg:[150,340],jump:150,types:'pj su le'},
- {place:'dinas',n:5,show:true,wx:'clear',leg:[150,340],jump:150,types:'pj su le sj'},
- {place:'llydaw',n:4,show:false,wx:'clear',leg:[160,340],jump:150,types:'pj su le'},
- {place:'rhydddu',n:5,show:false,wx:'clear',leg:[160,340],jump:150,types:'pj su le sj'},
- {place:'cowlyd',n:5,show:false,wx:'evening',leg:[170,360],jump:150,types:'pj su le sj'},
- {place:'idwal',n:5,show:false,wx:'clear',leg:[170,360],jump:150,types:'pj su le sj'},
- {place:'llagi',n:5,show:false,wx:'haze',leg:[170,360],jump:150,types:'pj su le sj'},
- {place:'stwlan',n:5,show:false,wx:'overcast',leg:[180,380],jump:150,types:'pj su le sj cf'},
- {place:'cwmbychan',n:6,show:false,wx:'haze',leg:[160,340],jump:150,types:'pj su le sj cf'},
- {place:'glyderfawr',n:5,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su le sj cf'},
- {place:'moelhebog',n:5,show:false,wx:'haze',leg:[200,400],jump:150,types:'pj su le sj cf'},
- {place:'cwmsilyn',n:6,show:false,wx:'overcast',leg:[180,380],jump:150,types:'pj su le sj cf'},
- {place:'cau',n:6,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su le sj cf'},
- {place:'dafydd',n:6,show:false,wx:'haze',leg:[200,400],jump:150,types:'pj su le sj cf'},
- {place:'arenig',n:6,show:false,wx:'overcast',leg:[200,420],jump:150,types:'pj su le sj cf'},
- {place:'rhinogfawr',n:6,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su le sj cf'},
- {place:'carneddau',n:6,show:false,wx:'mist',leg:[150,320],jump:150,types:'pj su le sj cf'},
+ {place:'padarn',n:4,show:true,wx:'clear',leg:[140,300],jump:150,types:'pj su pb xs wc'},
+ {place:'gwynant',n:4,show:true,wx:'clear',leg:[140,320],jump:150,types:'pj su pb xs wc'},
+ {place:'crafnant',n:4,show:true,wx:'clear',leg:[150,320],jump:150,types:'pj su pb xs wc'},
+ {place:'ogwen',n:5,show:true,wx:'evening',leg:[150,340],jump:150,types:'pj su pb xs wc'},
+ {place:'dinas',n:5,show:true,wx:'clear',leg:[150,340],jump:150,types:'pj su pb xs wc'},
+ {place:'llydaw',n:4,show:false,wx:'clear',leg:[160,340],jump:150,types:'pj su sj xs wc pb kn'},
+ {place:'rhydddu',n:5,show:false,wx:'clear',leg:[160,340],jump:150,types:'pj su sj xs wc pb kn'},
+ {place:'cowlyd',n:5,show:false,wx:'evening',leg:[170,360],jump:150,types:'pj su sj xs wc pb kn'},
+ {place:'idwal',n:5,show:false,wx:'clear',leg:[170,360],jump:150,types:'pj su sj xs wc pb kn'},
+ {place:'llagi',n:5,show:false,wx:'haze',leg:[170,360],jump:150,types:'pj su sj xs wc pb kn'},
+ {place:'stwlan',n:5,show:false,wx:'overcast',leg:[180,380],jump:150,types:'pj su sj xs wc kn'},
+ {place:'cwmbychan',n:6,show:false,wx:'haze',leg:[160,340],jump:150,types:'pj su sj xs wc kn'},
+ {place:'glyderfawr',n:5,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su sj xs wc kn'},
+ {place:'moelhebog',n:5,show:false,wx:'haze',leg:[200,400],jump:150,types:'pj su sj xs wc kn'},
+ {place:'cwmsilyn',n:6,show:false,wx:'overcast',leg:[180,380],jump:150,types:'pj su sj xs wc kn'},
+ {place:'cau',n:6,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su sj xs wc kn'},
+ {place:'dafydd',n:6,show:false,wx:'haze',leg:[200,400],jump:150,types:'pj su sj xs wc kn'},
+ {place:'arenig',n:6,show:false,wx:'overcast',leg:[200,420],jump:150,types:'pj su sj xs wc kn'},
+ {place:'rhinogfawr',n:6,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su sj xs wc kn'},
+ {place:'carneddau',n:6,show:false,wx:'mist',leg:[150,320],jump:150,types:'pj su sj xs wc kn'},
 ];
 let olv=load('way-orient',{cur:1,open:1,best:{},stars:{}}), OL=null, LH0=null, kiteTex=null;
 const fmtT=s=>{ s=Math.round(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
@@ -978,7 +981,7 @@ function legCost(x0,z0,x1,z1){
   const hs=(x,z)=>(hAt(x,z)*2+hAt(x+4,z)+hAt(x-4,z)+hAt(x,z+4)+hAt(x,z-4))/6;
   const d=Math.hypot(x1-x0,z1-z0), n=Math.max(1,Math.ceil(d/10)), ds=d/n; let t=0, block=null, hp=hs(x0,z0);
   for(let q=1;q<=n;q++){ const x=lerp(x0,x1,q/n), z=lerp(z0,z1,q/n), h=hs(x,z), sl=(h-hp)/ds, m=maskAt(x,z)|maskAt(lerp(x0,x1,(q-0.5)/n),lerp(z0,z1,(q-0.5)/n));
-    if(m&16) block=block||'oWater'; else if(m&8) block=block||'oBlock'; else if(Math.abs(sl)>1.2) block=block||'oSteep';
+    if((m&16)||h<0.3) block=block||'oWater'; else if(m&8) block=block||'oBlock'; else if(Math.abs(sl)>1.2) block=block||'oSteep';
     const v=6*Math.exp(-3.5*Math.abs(sl+0.05))/3.6*((m&(128|2))?1:(m&64)?0.5:0.72);
     t+=Math.hypot(ds,h-hp)/Math.max(0.12,v); hp=h; }
   return {t,block,d};
@@ -1001,6 +1004,16 @@ function orientFeatures(){
     if(hit){ const q=[p[0]+5,p[1]+5]; add(q[0],q[1],'sj'); } } });
   for(const c of cliffs){ const m=c[Math.floor(c.length/2)]; const e=5, gx=hAt(m[0]+e,m[1])-hAt(m[0]-e,m[1]), gz=hAt(m[0],m[1]+e)-hAt(m[0],m[1]-e), g=Math.hypot(gx,gz)||1;
     const x=m[0]-gx/g*12, z=m[1]-gz/g*12; if(slopeAt(x,z)<0.9) add(x,z,'cf'); }
+  // T-junctions (a path or stream ending on another), paths crossing streams, and wall corners
+  const nearLine=(p,L,skip,r)=>L.some((l,li)=>li!==skip&&l.some((q,k)=>k>0&&segDist(p[0],p[1],l[k-1][0],l[k-1][1],q[0],q[1])<r));
+  const PR=footpaths.concat(roads);
+  PR.forEach((l,li)=>{ for(const p of [l[0],l[l.length-1]]) if(nearLine(p,PR,li,5)) add(p[0],p[1],'pj'); });
+  rivers.forEach((l,li)=>{ for(const p of [l[0],l[l.length-1]]) if(nearLine(p,rivers,li,6)) add(p[0]+4,p[1]+4,'sj'); });
+  const cross=(a,b,c,d)=>{ const r=[b[0]-a[0],b[1]-a[1]], q=[d[0]-c[0],d[1]-c[1]], den=r[0]*q[1]-r[1]*q[0]; if(Math.abs(den)<1e-9) return null;
+    const t=((c[0]-a[0])*q[1]-(c[1]-a[1])*q[0])/den, u=((c[0]-a[0])*r[1]-(c[1]-a[1])*r[0])/den; return t>=0&&t<=1&&u>=0&&u<=1?[a[0]+r[0]*t,a[1]+r[1]*t]:null; };
+  for(const fp of footpaths) for(let k=1;k<fp.length;k++) for(const rv of rivers) for(let m=1;m<rv.length;m++){ const x=cross(fp[k-1],fp[k],rv[m-1],rv[m]); if(x) add(x[0]+3,x[1]+3,'xs'); }
+  const WE=new Map(); for(const w of walls) for(const [e,o] of [[[w[0],w[1]],[w[2],w[3]]],[[w[2],w[3]],[w[0],w[1]]]]){ const k=Math.round(e[0]/2)+','+Math.round(e[1]/2); if(!WE.has(k)) WE.set(k,{p:e,d:[]}); WE.get(k).d.push(Math.atan2(o[1]-e[1],o[0]-e[0])); }
+  for(const {p,d} of WE.values()) if(d.length>=2){ let turn=false; for(let a=0;a<d.length;a++) for(let b=a+1;b<d.length;b++){ let da=Math.abs(d[a]-d[b]); if(da>Math.PI) da=2*Math.PI-da; if(da<2.4) turn=true; } if(turn) add(p[0]+3,p[1]+3,'wc'); }
   // extra sites, used when a place is short of the usual ones: sharp path bends and small knolls
   for(const fp of footpaths) for(let k=1;k<fp.length-1;k++){ const a=fp[k-1],b=fp[k],c=fp[k+1], a1=Math.atan2(b[1]-a[1],b[0]-a[0]), a2=Math.atan2(c[1]-b[1],c[0]-b[0]);
     let da=Math.abs(a2-a1); if(da>Math.PI) da=2*Math.PI-da; if(da>0.9&&Math.hypot(b[0]-a[0],b[1]-a[1])>8&&Math.hypot(c[0]-b[0],c[1]-b[1])>8) add(b[0],b[1],'pb'); }
@@ -1011,7 +1024,7 @@ function orientFeatures(){
 }
 const oShow=L=>settings.opos==='on'?true:settings.opos==='off'?false:L.show;
 function orientCourse(rand,relax){
-  const L=OL, types=relax?'pj su le sj cf pb kn':L.types, leg=relax?[L.leg[0]*0.5,L.leg[1]*1.5]:L.leg, gap=relax?60:95;
+  const L=OL, types=relax?'pj su le sj cf pb kn xs wc':L.types, leg=relax?[L.leg[0]*0.5,L.leg[1]*1.5]:L.leg, gap=relax?60:95;
   const F=orientFeatures().filter(f=>types.includes(f[2]));
   if(F.length<L.n) return null;
   for(let at=0;at<80;at++){
@@ -1020,8 +1033,13 @@ function orientCourse(rand,relax){
     const seq=[]; let cur=st; const used=[st];
     for(let k=0;k<L.n;k++){
       const cand=F.filter(f=>{ const d=Math.hypot(f[0]-cur[0],f[1]-cur[1]); return d>=leg[0]&&d<=leg[1]&&used.every(u=>Math.hypot(f[0]-u[0],f[1]-u[1])>gap); });
-      if(!cand.length) break; const f=cand[Math.floor(rand()*cand.length)]; seq.push(f); used.push(f); cur=f; }
+      if(!cand.length) break;
+      // mix the clues: pick a kind of feature first (not the same kind twice running if there's a choice), then one of that kind
+      let kinds=[...new Set(cand.map(c=>c[2]))]; const prev=seq.length?seq[seq.length-1][2]:null; if(kinds.length>1) kinds=kinds.filter(t=>t!==prev);
+      const kind=kinds[Math.floor(rand()*kinds.length)], pool=cand.filter(c=>c[2]===kind), f=pool[Math.floor(rand()*pool.length)];
+      seq.push(f); used.push(f); cur=f; }
     if(seq.length<L.n) continue;
+    if(!relax&&new Set(seq.map(c=>c[2])).size<Math.min(3,L.n-1)) continue;   // want a mix of clues; after a few hills, take what there is
     let par=0, p=st; for(const c of seq){ const lc=legCost(p[0],p[1],c[0],c[1]); par+=lc.t+5*Math.ceil(lc.d/L.jump); p=c; }
     S.oc={start:st,ctrls:seq,show:oShow(L),maxJump:L.jump,punch:8,par:par*1.3};
     return [{x:st[0],z:st[1]}];
@@ -1685,7 +1703,7 @@ function reveal(){
   save(); updateStats();
   viewFrom(S.truePos.x,S.truePos.z); drawMap(); updateChoices(); setTag(); updateTop();
 }
-const TX={f_pb:'Tro yn y llwybr',f_kn:'Bryncyn',oHead:'Cyfeiriad ${b}',oHint:'Llusga i edrych · tapia’r tir i symud',oIntro:'Ymwela â’r pwyntiau yn eu trefn. Tapia’r tir yn yr olygfa i symud yno.',oCtrl:'Pwynt ${n} o ${t}',oFinish:'Diwedd',f_pj:'Cyffordd llwybrau',f_su:'Copa',f_le:'Pen y llyn',f_sj:'Cymer nentydd',f_cf:'Troed y graig',oPeek:'Ble ydw i? (+30 e)',oSky:'Tapia ar y tir i symud',oEdge:'Mae hynny oddi ar ymyl y map',oFar:'Rhy bell: hyd at ${m} m ar y tro',oWater:'Does dim modd croesi dŵr',oSteep:'Rhy serth: chwilia am ffordd arall',oBlock:'Does dim modd mynd y ffordd honno',oPunch:'Pwynt ${n} ✓',oDone:'Cwrs wedi’i gwblhau!',oTime:'Dy amser ${t} · par ${p}',oRoute:'Gweld fy llwybr',oTry:'Rho gynnig arall',oLevel:'Cwrs ${n}',oShown:'safle i’w weld',oHidden:'safle wedi’i guddio',oNext:'Nesaf: cwrs ${n}',oAgain:'Rhedeg eto',oRestart:'Ailddechrau’r cwrs',oStats:'${n} o ${t} cwrs wedi’u gorffen · ${s} ★',oStats0:'Cyfeiriannu ar dir go iawn Eryri: 20 cwrs, yn mynd yn anoddach.',oFail:'Methu gosod cwrs yma. Rho gynnig arall.',cmp:'Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant',cmpHint:'Tapia ddau bwynt i fesur cyfeiriant',loading:'Wrthi’n llwytho ${n}…',loadFail:'Methu llwytho’r lle hwn. Gwiria dy gysylltiad a rho gynnig arall.',correct:'Cywir!',start:'Dyna ddechrau rhediad.',row:'Dyna ${n} yn olynol!',best:' Dy orau erioed.',again:'Cywir y tro yma. Mae dy rediad yn ailddechrau o’r un nesaf.',lvl:'Lefel ${n} wedi’i chwblhau.',wrongT:'Anghywir — rho gynnig arall',wrongM:'Doeddet ti ddim yn sefyll yn ${L}.',ends:' Dyna ddiwedd dy rediad o ${n}.',lvlWrong:'Roeddet ti yn ${T}, nid ${L}.',tryA:'Rho gynnig arall',show:'Dangos yr ateb',look:'Edrych o gwmpas',where:'Gweld ble roeddwn i',retry:'<b>Nid ${L}.</b><small>Rho gynnig ar fan arall, neu <button class="linkbtn" id="showAns" type="button">dangos yr ateb</button>.</small>',out:'${d} m allan, am ${p} pwynt.'};
+const TX={f_xs:'Croesfan nant',f_wc:'Cornel wal',f_pb:'Tro yn y llwybr',f_kn:'Bryncyn',oHead:'Cyfeiriad ${b}',oHint:'Llusga i edrych · tapia’r tir i symud',oIntro:'Ymwela â’r pwyntiau yn eu trefn. Tapia’r tir yn yr olygfa i symud yno.',oCtrl:'Pwynt ${n} o ${t}',oFinish:'Diwedd',f_pj:'Cyffordd llwybrau',f_su:'Copa',f_le:'Pen y llyn',f_sj:'Cymer nentydd',f_cf:'Troed y graig',oPeek:'Ble ydw i? (+30 e)',oSky:'Tapia ar y tir i symud',oEdge:'Mae hynny oddi ar ymyl y map',oFar:'Rhy bell: hyd at ${m} m ar y tro',oWater:'Does dim modd croesi dŵr',oSteep:'Rhy serth: chwilia am ffordd arall',oBlock:'Does dim modd mynd y ffordd honno',oPunch:'Pwynt ${n} ✓',oDone:'Cwrs wedi’i gwblhau!',oTime:'Dy amser ${t} · par ${p}',oRoute:'Gweld fy llwybr',oTry:'Rho gynnig arall',oLevel:'Cwrs ${n}',oShown:'safle i’w weld',oHidden:'safle wedi’i guddio',oNext:'Nesaf: cwrs ${n}',oAgain:'Rhedeg eto',oRestart:'Ailddechrau’r cwrs',oStats:'${n} o ${t} cwrs wedi’u gorffen · ${s} ★',oStats0:'Cyfeiriannu: 20 cwrs, yn mynd yn anoddach.',oFail:'Methu gosod cwrs yma. Rho gynnig arall.',cmp:'Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant',cmpHint:'Tapia ddau bwynt i fesur cyfeiriant',loading:'Wrthi’n llwytho ${n}…',loadFail:'Methu llwytho’r lle hwn. Gwiria dy gysylltiad a rho gynnig arall.',correct:'Cywir!',start:'Dyna ddechrau rhediad.',row:'Dyna ${n} yn olynol!',best:' Dy orau erioed.',again:'Cywir y tro yma. Mae dy rediad yn ailddechrau o’r un nesaf.',lvl:'Lefel ${n} wedi’i chwblhau.',wrongT:'Anghywir — rho gynnig arall',wrongM:'Doeddet ti ddim yn sefyll yn ${L}.',ends:' Dyna ddiwedd dy rediad o ${n}.',lvlWrong:'Roeddet ti yn ${T}, nid ${L}.',tryA:'Rho gynnig arall',show:'Dangos yr ateb',look:'Edrych o gwmpas',where:'Gweld ble roeddwn i',retry:'<b>Nid ${L}.</b><small>Rho gynnig ar fan arall, neu <button class="linkbtn" id="showAns" type="button">dangos yr ateb</button>.</small>',out:'${d} m allan, am ${p} pwynt.'};
 const tx=(k,o={})=>TX[k].replace(/\$\{(\w+)\}/g,(m,v)=>o[v]);
 function showPop(kind,icon,title,streak,msg,btns){
   const p=$('#pop'); p.className='on '+kind; $('#popI').textContent=icon; $('#popT').textContent=title;
@@ -1762,16 +1780,15 @@ function newRound(){
   if(play==='orient'){
     if(S.play==='orient'&&S.phase==='done'&&S.oAdvance){ olv.cur=Math.min(OLV.length,olv.cur+1); store('way-orient',olv); }
     S.oAdvance=false;
-    OL=OLV[olv.cur-1]; const P=ERY.find(e=>e.id===OL.place);
-    if(!ERYC[P.id]){ $('#status').innerHTML=`<small>${tx('loading',{n:P.name})}</small>`; vmsg(tx('loading',{n:P.name})); loadPlace(P.id).then(()=>{ vmsg(''); newRound(); }).catch(()=>loadFailMsg(P.id)); return; }
-    D=Object.assign({},LEVELS.easy,{look:true,any:false,anyP:0,timer:0,similar:false,weathers:[OL.wx],id:P.id,name:P.name}); mode='orient'; base=hashStr('orient-'+olv.cur);
+    OL=OLV[olv.cur-1];
+    D=Object.assign({},LEVELS.easy,{look:true,any:false,anyP:0,timer:0,similar:false,weathers:[OL.wx]}); mode='orient'; base=hashStr('orient-'+olv.cur);
   }
   else if(play==='eryri'){
     let P=ERY.find(e=>e.id===(S.ePend||settings.eplace));
     if(!P){ const pool=ERY.filter(e=>e.id!==S.eLast); P=pool[Math.floor(Math.random()*pool.length)]; }   // random, never the same place twice running
     if(!ERYC[P.id]){
       $('#status').innerHTML=`<small>${tx('loading',{n:P.name})}</small>`;
-      vmsg(tx('loading',{n:P.name})); loadPlace(P.id).then(()=>{ vmsg(''); S.ePend=P.id; newRound(); }).catch(()=>{ S.ePend=null; loadFailMsg(P.id); });
+      vmsg(tx('loading',{n:P.name})); loadPlace(P.id).then(()=>{ vmsg(''); S.ePend=P.id; newRound(); }).catch(()=>{ S.ePend=null; loadFailMsg(P.id,'eryri'); });
       return;
     }
     S.ePend=null;
@@ -1784,11 +1801,12 @@ function newRound(){
   for(let tries=0; !pts && tries<8; tries++){
     seed=(base+tries*7919)>>>0; rand=mulberry32(seed);
     S={phase:'guess', eLast:S.eLast, mode, play, dr, picked:-1, guess:null, yaw:0, hidden:false, pts:[]};
-    if(play==='eryri'||play==='orient'){ genReal(ERYC[D.id],rand); S.gridE=(REAL.Ec-HALF)/100; S.gridN=(REAL.Nc-HALF)/100; }
+    if(play==='eryri'){ genReal(ERYC[D.id],rand); S.gridE=(REAL.Ec-HALF)/100; S.gridN=(REAL.Nc-HALF)/100; }
     else {
       REAL=null; lakes=[]; cliffs=[]; rails=[]; rockP=[]; woodP=[]; places=[]; pathPts=[]; N=161; SIZE=1200; HALF=SIZE/2; CS=SIZE/(N-1);
       S.gridE=10+Math.floor(rand()*80); S.gridN=10+Math.floor(rand()*80);
       genTerrain(rand);
+      if(play==='orient') for(const fp of footpaths) markMask(dens(fp,6),128,3);   // paths are quicker to walk
     }
     let wk=D.weathers[Math.floor(rand()*D.weathers.length)];
     if(wk==='lowcloud'&&maxH<55) wk='overcast';
@@ -1909,9 +1927,9 @@ function updateTop(){
   $('#oposWrap').style.display=play==='orient'?'':'none';
   const mi=$('#modeInfo'), nx=$('#next'), rev=S.phase==='revealed';
   mi.style.display=play==='unlimited'?'none':'';
-  if(play==='orient'){ const L=OLV[olv.cur-1], P=ERY.find(e=>e.id===L.place);
-    const opts=OLV.slice(0,olv.open).map((l,k)=>`<option value="${k+1}"${k+1===olv.cur?' selected':''}>${k+1}. ${ERY.find(e=>e.id===l.place).name}${olv.stars[k+1]?' '+'★'.repeat(olv.stars[k+1]):''}</option>`).join('');
-    mi.innerHTML=`<b>${tx('oLevel',{n:olv.cur})}</b><span>${P.name} · ${oShow(L)?tx('oShown'):tx('oHidden')}</span>`+(olv.open>1?`<select id="oPick">${opts}</select>`:'');
+  if(play==='orient'){ const L=OLV[olv.cur-1];
+    const opts=OLV.slice(0,olv.open).map((l,k)=>`<option value="${k+1}"${k+1===olv.cur?' selected':''}>${tx('oLevel',{n:k+1})}${olv.stars[k+1]?' '+'★'.repeat(olv.stars[k+1]):''}</option>`).join('');
+    mi.innerHTML=`<b>${tx('oLevel',{n:olv.cur})}</b><span>${oShow(L)?tx('oShown'):tx('oHidden')}</span>`+(olv.open>1?`<select id="oPick">${opts}</select>`:'');
     const pk=$('#oPick'); if(pk) pk.onchange=()=>{ olv.cur=+pk.value; store('way-orient',olv); S.oAdvance=false; newRound(); };
     nx.textContent = S.phase==='done' ? (olv.cur<OLV.length?tx('oNext',{n:olv.cur+1}):tx('oAgain')) : tx('oRestart'); nx.disabled=false; return; }
   if(play==='eryri'){
