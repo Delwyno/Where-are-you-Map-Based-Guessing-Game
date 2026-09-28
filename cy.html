@@ -1,0 +1,1983 @@
+<!doctype html>
+<html lang="cy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--pwa--><link rel="manifest" href="manifest-cy.webmanifest"><meta name="theme-color" content="#1c2833"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><!--/pwa-->
+<title>Ble wyt ti? — her map cyfuchliniau</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1ec; --paper:#fbfbf6; --ink:#1d2a33; --muted:#5d6b73;
+  --contour:#c9733d; --contour-index:#9a4a1c; --grid:#8fbde2; --wood:#bddcaa; --tree:#5f9150;
+  --mark:#7a2d8f; --good:#1f7a3a; --bad:#c0392b; --frame:#b9c3c6;
+  --sky-top:#7fa6cf; --sky-horizon:#d5dee2;
+  --btn:#1d2a33; --btn-ink:#fbfbf6;
+  --water:#bfe0f1; --water-edge:#3a8cc4; --road:#f4c24f; --road-casing:#6e5a36; --path:#b3282d;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f161b; --paper:#15212a; --ink:#e7ede6; --muted:#9aa8ae;
+    --contour:#d98a55; --contour-index:#f1b27f; --grid:#2c4f6a; --wood:#23402a; --tree:#5c9a5a;
+    --mark:#d796ea; --good:#5cc97a; --bad:#ef6d5f; --frame:#2d3d48;
+    --sky-top:#2b4566; --sky-horizon:#8795a0;
+    --btn:#e7ede6; --btn-ink:#0f161b;
+    --water:#1c3b52; --water-edge:#5aa8d8; --road:#c9993a; --road-casing:#07100f; --path:#ff8a80;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f161b; --paper:#15212a; --ink:#e7ede6; --muted:#9aa8ae;
+  --contour:#d98a55; --contour-index:#f1b27f; --grid:#2c4f6a; --wood:#23402a; --tree:#5c9a5a;
+  --mark:#d796ea; --good:#5cc97a; --bad:#ef6d5f; --frame:#2d3d48;
+  --sky-top:#2b4566; --sky-horizon:#8795a0;
+  --btn:#e7ede6; --btn-ink:#0f161b;
+  --water:#1c3b52; --water-edge:#5aa8d8; --road:#c9993a; --road-casing:#07100f; --path:#ff8a80;
+}
+*{box-sizing:border-box}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45}
+main{max-width:600px;margin:0 auto;padding:14px 14px 32px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:"Barlow Condensed","Arial Narrow",Impact,sans-serif;font-weight:800;font-size:clamp(28px,9.2vw,52px);line-height:1;margin:0;letter-spacing:-.01em;white-space:nowrap}
+.facing{position:absolute;left:10px;top:10px;z-index:2;display:flex;align-items:center;gap:7px;background:rgba(0,0,0,.55);color:#fff;font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:600;font-size:18px;line-height:1.1;padding:4px 12px 4px 5px;border-radius:22px;white-space:nowrap}
+.compass{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;border:2px solid #fff;font-size:15px;transition:transform .4s ease}
+.sub{color:var(--muted);font-size:14px;margin:6px 0 0}
+#view{touch-action:pan-y;user-select:none;-webkit-user-select:none;position:relative;width:100%;aspect-ratio:16/10;border-radius:14px 14px 4px 4px;overflow:hidden;background:linear-gradient(to bottom,var(--sky-top) 0%,var(--sky-horizon) 52%);margin-top:14px}
+#view canvas{display:block;width:100%;height:100%}
+#viewtag{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;padding:3px 9px;border-radius:20px;display:none}
+#err{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:20px;color:#fff;background:rgba(0,0,0,.5)}
+.mapwrap{margin-top:6px;background:var(--paper);border:1px solid var(--frame);border-radius:4px 4px 14px 14px;padding:8px}
+#mapBox{position:relative;overflow:hidden;width:100%;aspect-ratio:1/1;touch-action:pan-y}
+#map{display:block;width:100%;aspect-ratio:1/1;cursor:pointer;transform-origin:0 0}
+#mapBox.zoomed{touch-action:none} #mapBox.zoomed #map{cursor:grab}
+.zoomBtns{position:absolute;right:6px;top:74px;display:flex;flex-direction:column;gap:4px;z-index:2}
+.zoomBtns button{width:34px;height:34px;border-radius:9px;border:1px solid var(--frame);background:var(--paper);color:var(--ink,#1c2833);font:700 20px/1 Barlow,system-ui,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.18);cursor:pointer;padding:0}
+.zoomBtns button:disabled{opacity:.4;cursor:default}
+.zoomBtns #zReset{font-size:16px}
+.zoomBtns #zCompass{display:grid;place-items:center}
+.zoomBtns #zCompass[aria-pressed="true"]{background:var(--mark);color:#fff;border-color:var(--mark)}
+.legend{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:12.5px;padding:4px 4px 0}
+.choices{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.choice{width:50px;height:50px;border-radius:50%;border:2px solid var(--mark);background:var(--paper);color:var(--mark);font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:22px;cursor:pointer}
+.choice.good{background:var(--good);border-color:var(--good);color:#fff}
+.choice.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.choice.viewing{outline:3px dashed var(--mark);outline-offset:3px}
+.choice:focus-visible,.seg button:focus-visible,.next:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+#status{text-align:center;min-height:48px;margin-top:12px;font-size:17px}
+#status b{font-weight:600}
+#status small{display:block;color:var(--muted);font-size:14px}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-top:14px}
+.next{flex:1 1 100%;padding:11px;border:0;border-radius:12px;background:var(--btn);color:var(--btn-ink);font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:22px;cursor:pointer}
+.seg{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.seg div{display:flex;border:1px solid var(--frame);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);padding:8px 12px;font:inherit;font-size:14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.stats{text-align:center;color:var(--muted);font-size:14px;margin-top:14px}
+
+.key{display:flex;flex-wrap:wrap;gap:6px 14px;padding:8px 4px 2px;font-size:12.5px;color:var(--muted)}
+.key span{display:inline-flex;align-items:center;gap:5px}
+.key svg{flex:none}
+#vlabels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.vl{position:absolute;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);color:#fff;font:600 12.5px Barlow,system-ui,sans-serif;line-height:1.1;white-space:nowrap;text-shadow:0 0 3px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.8)}
+.vl::after{content:"";width:1px;height:14px;margin-top:2px;background:rgba(255,255,255,.85);box-shadow:0 0 2px rgba(0,0,0,.7)}
+.vl.lake{color:#d9f0ff;font-style:italic}
+.vl.lake::after{height:8px}
+#namesBtn{position:absolute;right:10px;top:42px;border:0;background:rgba(0,0,0,.5);color:#fff;font:600 13px Barlow,system-ui,sans-serif;padding:3px 10px;border-radius:20px;display:none;cursor:pointer}
+#namesBtn[aria-pressed="false"]{opacity:.7;text-decoration:line-through}
+header .lang{font:600 15px Barlow,system-ui,sans-serif;color:var(--muted);text-decoration:none;border:1px solid currentColor;border-radius:20px;padding:3px 11px;align-self:center;white-space:nowrap}
+header .lang:hover{color:inherit}
+#wxTag{position:absolute;right:10px;top:10px;background:rgba(0,0,0,.5);color:#fff;font-size:13px;padding:3px 9px;border-radius:20px}
+#lookHint{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.5);color:#fff;font-size:13px;padding:3px 9px;border-radius:20px;display:none;pointer-events:none}
+#resetView{position:absolute;right:10px;bottom:10px;border:0;background:rgba(255,255,255,.9);color:#1d2a33;font:600 13px Barlow,system-ui,sans-serif;padding:6px 11px;border-radius:20px;display:none;cursor:pointer}
+#countdown{position:absolute;right:10px;bottom:10px;background:#1d2a33;color:#fff;font:800 20px "Barlow Condensed",sans-serif;padding:2px 12px;border-radius:20px;display:none}
+#cover{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:20px;background:#1d2a33;color:#e7ede6;font:800 26px "Barlow Condensed",sans-serif}
+#cover small{display:block;font:400 15px Barlow,system-ui,sans-serif;color:#9aa8ae;margin-top:4px}
+.confirm{padding:13px 26px;border:0;border-radius:12px;background:var(--mark);color:#fff;font:800 20px "Barlow Condensed",sans-serif;cursor:pointer}
+.hint{margin:4px 0;color:var(--muted)}
+.settings{margin-top:10px;gap:10px}
+.tabs{display:flex;gap:6px;margin-top:12px;background:var(--paper);border:1px solid var(--frame);border-radius:14px;padding:5px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--ink);font:800 20px "Barlow Condensed",sans-serif;padding:9px 6px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.tabs small{display:block;font:400 12px Barlow,system-ui,sans-serif;opacity:.75;margin-top:1px}
+.modeinfo{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:15px;color:var(--muted)}
+.modeinfo b{font:800 26px "Barlow Condensed",sans-serif;color:var(--ink)}
+.linkbtn{border:0;background:none;color:var(--muted);text-decoration:underline;font:inherit;font-size:14px;cursor:pointer;padding:0}
+.next:disabled{opacity:.45;cursor:default}
+.modeinfo select{font:inherit;font-size:14px;padding:5px 8px;border:1px solid var(--frame);border-radius:8px;background:var(--paper);color:var(--ink);max-width:100%}
+.credits{font-size:11.5px;line-height:1.4;color:var(--muted);margin:6px 4px 0}
+.credits a{color:inherit}
+.daily-sum{margin:6px auto 0;max-width:460px;text-align:center}
+.daily-sum .tot{font:800 40px "Barlow Condensed",sans-serif;color:var(--ink)}
+.daily-sum .tiles{font-size:30px;letter-spacing:4px;margin:4px 0}
+.daily-sum table{margin:6px auto;border-collapse:collapse;font-size:14px;color:var(--muted)}
+.daily-sum td{padding:2px 10px}
+.sharebtn{margin-top:8px;padding:11px 26px;border:0;border-radius:12px;background:var(--mark);color:#fff;font:800 20px "Barlow Condensed",sans-serif;cursor:pointer}
+h1 .sorry{font-family:"Barlow",system-ui,sans-serif;font-weight:400;font-size:.3em;letter-spacing:0;color:var(--muted);vertical-align:middle}
+.kbd{display:none;color:var(--muted);font-size:13px;margin:10px 2px 0}
+kbd{font:600 12px Barlow,system-ui,sans-serif;border:1px solid var(--frame);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--paper);color:var(--ink)}
+@media (hover:hover) and (pointer:fine){
+  .kbd{display:block}
+  #view{cursor:grab} #view:active{cursor:grabbing}
+  .choice:hover,.seg button:hover{filter:brightness(1.08)}
+  .next:hover,.confirm:hover{filter:brightness(1.15)}
+}
+@media (min-width:900px){
+  main{max-width:1280px;padding:22px 28px 40px}
+  header{align-items:baseline}
+  .settings{flex-wrap:nowrap;justify-content:flex-start;gap:22px}
+  .settings .next{flex:0 0 auto;margin-left:auto;padding:10px 28px}
+  .game{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(360px,1fr);gap:22px;align-items:start;margin-top:4px}
+  .left{position:sticky;top:16px}
+  .left #view{aspect-ratio:4/3;border-radius:14px}
+  .right .mapwrap{margin-top:14px;border-radius:14px}
+}
+@media (min-width:900px) and (max-height:820px){ .left #view{aspect-ratio:16/10} }
+@media (prefers-reduced-motion: reduce){.compass{transition:none}}
+.seg button{white-space:nowrap}
+#pop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,22,30,.32);z-index:1000;padding:14px}
+#pop.on{display:flex}
+#pop .card{background:var(--paper);color:var(--ink,#1c2833);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:20px 22px 18px;max-width:330px;width:100%;text-align:center;animation:popin .28s cubic-bezier(.2,1.4,.4,1)}
+#pop .ico{width:54px;height:54px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;font:800 30px Barlow,system-ui,sans-serif;color:#fff}
+#pop.good .ico{background:var(--good)} #pop.bad .ico{background:var(--bad)} #pop.mid .ico{background:var(--mark)}
+#pop h2{margin:0 0 4px;font:800 24px Barlow,system-ui,sans-serif}
+#pop p{margin:0 0 14px;font:400 15px/1.35 Barlow,system-ui,sans-serif;color:var(--muted)}
+#pop .streak{display:inline-block;margin:-4px 0 12px;padding:3px 12px;border-radius:20px;background:rgba(0,0,0,.06);font:700 15px Barlow,system-ui,sans-serif}
+#pop .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#pop .btns button{border:0;border-radius:10px;padding:10px 16px;font:700 16px Barlow,system-ui,sans-serif;cursor:pointer;background:rgba(0,0,0,.07);color:inherit}
+#pop .btns button.pri{background:var(--ink,#1c2833);color:#fff}
+@keyframes popin{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+.choice:disabled{opacity:.55;cursor:default}
+.ocard{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;justify-content:center;background:var(--paper);border:2px solid #b3187f;border-radius:12px;padding:8px 14px;font:600 16px Barlow,system-ui,sans-serif}
+.ocard b{color:#b3187f;font-weight:800} .otime{font-variant-numeric:tabular-nums}
+#otoast{position:absolute;left:50%;top:58px;transform:translateX(-50%);background:rgba(20,28,36,.85);color:#fff;padding:6px 14px;border-radius:20px;font:600 15px Barlow,system-ui,sans-serif;display:none;z-index:5;white-space:nowrap;pointer-events:none}
+.splits{margin:8px auto 0;border-collapse:collapse;font:500 14px Barlow,system-ui,sans-serif} .splits td{padding:2px 8px;text-align:left} .splits td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.tabs{gap:3px;padding:4px}.tabs button{font-size:16px;padding:7px 2px}.tabs small{font-size:10px}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Ble wyt ti?</h1>
+    <a class="lang" id="langLink" href="index.html" hreflang="en" lang="en">English</a>
+  </header>
+  <p class="sub">Astudia’r olygfa, yna gweithia allan ble ar y map rwyt ti’n sefyll.</p>
+  <div class="tabs" id="playTabs" role="tablist" aria-label="Math o gêm"></div>
+  <div class="row settings">
+    <div class="seg" id="ansWrap"><span>Ateb</span><div id="modeSeg"></div></div>
+    <div class="seg" id="oposWrap"><span>Fy safle</span><div id="oposSeg"></div></div>
+    <div class="seg" id="lvlWrap"><span>Anhawster</span><div id="levelSeg"></div></div>
+    <div class="modeinfo" id="modeInfo"></div>
+    <button class="next" id="next">Tir newydd</button>
+  </div>
+
+  <div class="game">
+  <div class="left">
+  <div id="view"><div class="facing" aria-live="polite"><span class="compass" id="compass" aria-hidden="true">↑</span><span id="facingTxt">Yn wynebu’r gogledd</span></div><div id="vlabels" aria-hidden="true"></div><div id="wxTag"></div><button id="namesBtn" type="button" aria-pressed="true">Enwau</button><div id="lookHint">Llusga i edrych o gwmpas</div><div id="countdown"></div><div id="viewtag"></div><button id="resetView" type="button">Wynebu ymlaen</button><div id="cover"><div>Golygfa wedi’i chuddio<small>Ble roeddet ti’n sefyll?</small></div></div><div id="otoast" aria-live="polite"></div><div id="err"></div><div id="pop" role="dialog" aria-modal="false" aria-live="assertive"><div class="card"><div class="ico" id="popI"></div><h2 id="popT"></h2><div class="streak" id="popS"></div><p id="popM"></p><div class="btns" id="popB"></div></div></div></div>
+  <p class="kbd">Bysellfwrdd: <kbd>←</kbd> <kbd>→</kbd> edrych o gwmpas, <kbd>A</kbd>–<kbd>F</kbd> dewis man, <kbd>Enter</kbd> cadarnhau, <kbd>N</kbd> tir newydd.</p>
+  </div>
+  <div class="right">
+  <div class="mapwrap">
+    <div id="mapBox"><canvas id="map" aria-label="Map cyfuchliniau gyda’r mannau posib"></canvas><div class="zoomBtns"><button id="zCompass" type="button" aria-pressed="false" aria-label="Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant" title="Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3.2 12.3 10 10 16.8 7.7 10Z" fill="currentColor" opacity=".35"/><path d="M10 3.2 12.3 10H7.7Z" fill="#c0392b"/></svg></button><button id="zIn" type="button" aria-label="Chwyddo i mewn" title="Chwyddo i mewn">+</button><button id="zOut" type="button" aria-label="Chwyddo allan" title="Chwyddo allan">−</button><button id="zReset" type="button" aria-label="Dangos y map cyfan" title="Dangos y map cyfan">⤢</button></div></div>
+    <div class="key" aria-label="Allwedd y map">
+      <span data-k="water"><svg width="18" height="12" aria-hidden="true"><rect x="1" y="1" width="16" height="10" rx="2" style="fill:var(--water);stroke:var(--water-edge)"/></svg>Môr neu lyn</span>
+      <span data-k="river"><svg width="18" height="12" aria-hidden="true"><path d="M1 9C6 2 11 12 17 3" style="fill:none;stroke:var(--water-edge);stroke-width:2"/></svg>Afon neu nant</span>
+      <span data-k="road"><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--road-casing);stroke-width:5"/><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--road);stroke-width:3"/></svg>Ffordd</span>
+      <span data-k="conifer"><svg width="18" height="12" aria-hidden="true"><rect width="18" height="12" rx="2" style="fill:var(--wood)"/><path d="M5 9l2.5-5 2.5 5zM10 9l2.5-5 2.5 5z" style="fill:var(--tree)"/></svg>Coedwig gonwydd</span>
+      <span data-k="broadleaf"><svg width="18" height="12" aria-hidden="true"><rect width="18" height="12" rx="2" style="fill:var(--wood)"/><circle cx="6" cy="6" r="2.2" style="fill:none;stroke:var(--tree);stroke-width:1.2"/><circle cx="12.5" cy="6" r="2.2" style="fill:none;stroke:var(--tree);stroke-width:1.2"/></svg>Coed llydanddail</span>
+      <span data-k="boulders"><svg width="18" height="12" aria-hidden="true"><circle cx="5" cy="7" r="1.7" style="fill:var(--ink)"/><circle cx="10" cy="4" r="1.4" style="fill:var(--ink)"/><circle cx="13" cy="8" r="1.7" style="fill:var(--ink)"/></svg>Clogfeini</span>
+      <span data-k="spot"><svg width="10" height="12" aria-hidden="true"><circle cx="5" cy="6" r="1.8" style="fill:var(--ink)"/></svg>Pwynt uchder</span>
+          <span data-k="wall"><svg width="18" height="12" aria-hidden="true"><path d="M1 9L17 3" style="stroke:var(--ink);stroke-width:1"/></svg>Wal</span>
+      <span data-k="building"><svg width="12" height="12" aria-hidden="true"><rect x="2" y="3" width="8" height="6" style="fill:var(--ink)"/></svg>Adeilad</span>
+      <span data-k="footpath"><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--path);stroke-width:1.7;stroke-dasharray:4 3"/></svg>Llwybr troed</span>
+      <span data-k="power"><svg width="18" height="12" aria-hidden="true"><path d="M1 6H17M5 3V9M13 3V9" style="stroke:var(--ink);stroke-width:1"/></svg>Llinell bŵer</span>
+      <span data-k="trig"><svg width="14" height="12" aria-hidden="true"><path d="M7 1.5L12 10H2Z" style="fill:none;stroke:var(--water-edge);stroke-width:1.4"/><circle cx="7" cy="7" r="1.3" style="fill:var(--water-edge)"/></svg>Piler triongli</span>
+      <span data-k="crag"><svg width="18" height="12" aria-hidden="true"><path d="M3 3v5M7 3v6M11 3v5M15 3v6" style="stroke:var(--ink);stroke-width:1"/></svg>Craig</span>
+      <span data-k="cliff"><svg width="18" height="12" aria-hidden="true"><path d="M1 4H17M3 4v5M7 4v5M11 4v5M15 4v5" style="stroke:var(--ink);stroke-width:1"/></svg>Clogwyn</span>
+      <span data-k="scree"><svg width="18" height="12" aria-hidden="true"><circle cx="4" cy="4" r="1" style="fill:var(--muted)"/><circle cx="10" cy="6" r="1" style="fill:var(--muted)"/><circle cx="15" cy="3" r="1" style="fill:var(--muted)"/><circle cx="7" cy="9" r="1" style="fill:var(--muted)"/><circle cx="14" cy="9" r="1" style="fill:var(--muted)"/></svg>Sgri neu graig</span>
+      <span data-k="rail"><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--ink);stroke-width:3"/><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--paper);stroke-width:1.2;stroke-dasharray:3 3"/></svg>Rheilffordd</span>
+    </div>
+    <div class="legend"><span>Cyfuchliniau bob 10 m, sgwariau grid 100 m</span><span id="seedTxt"></span></div>
+    <p class="credits" id="credits" hidden>Uchderau: model tir LiDAR 1 m Llywodraeth Cymru. Yn cynnwys gwybodaeth sector cyhoeddus a drwyddedir o dan y <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence-cymraeg/version/3/" target="_blank" rel="noopener">Drwydded Llywodraeth Agored v3.0</a>. Data’r map <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© cyfranwyr OpenStreetMap</a>.</p>
+  </div>
+
+  <div class="choices" id="choices"></div>
+  <div id="status" aria-live="polite"></div>
+
+
+  <div class="stats" id="stats"></div>
+  </div>
+  </div>
+</main>
+
+<script type="application/octet-stream" id="eryriData"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+let N = 161, SIZE = 1200, HALF = SIZE/2, CS = SIZE/(N-1); const CI = 10, EYE = 1.7, HFOV = 68, LAND = 6;
+const LETTERS = 'ABCDEF';
+const DIRS = [{n:'gogledd',a:'↑',deg:0},{n:'dwyrain',a:'→',deg:90},{n:'de',a:'↓',deg:180},{n:'gorllewin',a:'←',deg:270}];
+const LEVELS = {
+  easy:  {spots:3,any:false,look:true, thresh:2.5,similar:false,timer:0, landmark:true, weathers:['clear','clear','evening','overcast']},
+  medium:{spots:4,any:false,look:true, thresh:1.4,similar:false,timer:0, landmark:false,weathers:['clear','evening','overcast','haze','lowcloud']},
+  hard:  {spots:5,any:true, look:false,thresh:0.9,similar:true, timer:0, landmark:false,weathers:['clear','evening','overcast','haze','lowcloud','mist']},
+  expert:{spots:6,any:true, look:false,thresh:0.7,similar:true, timer:10,landmark:false,weathers:['evening','overcast','haze','lowcloud','mist','mist']},
+};
+const WEATHERS = {
+  clear:   {name:'Clir',     top:'#7fa6cf',hor:'#d5dee2',sun:1.15,sunC:0xfff0d6,sunE:420,hemi:0.55,hs:0xd6e2f0,hg:0x4a4630,near:700,far:6500,maxD:2600},
+  evening: {name:'Gyda’r nos',   top:'#34466f',hor:'#eeb488',sun:1.1, sunC:0xffa860,sunE:150,hemi:0.52,hs:0x9a9ac0,hg:0x3a2c22,near:700,far:6500,maxD:2600},
+  overcast:{name:'Cymylog',  top:'#8a939b',hor:'#c3c8cb',sun:0.35,sunC:0xffffff,sunE:700,hemi:0.9, hs:0xdde2e6,hg:0x4a4a40,near:500,far:4800,maxD:2600},
+  haze:    {name:'Tesog',      top:'#9cb2c6',hor:'#dfe2dc',sun:0.9, sunC:0xfff4e0,sunE:500,hemi:0.6, hs:0xd6e2f0,hg:0x4a4630,near:200,far:2300,maxD:1800},
+  lowcloud:{name:'Cymylau isel', top:'#9aa1a6',hor:'#c2c7ca',sun:0.3, sunC:0xffffff,sunE:700,hemi:0.9, hs:0xdde2e6,hg:0x4a4a40,near:400,far:4000,maxD:2600},
+  mist:    {name:'Niwl',      top:'#b8bdc0',hor:'#c6cacc',sun:0.2, sunC:0xffffff,sunE:700,hemi:0.95,hs:0xe0e4e6,hg:0x55554c,near:25, far:560, maxD:600},
+};
+const NB = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+
+let settings = {mode:'spots', level:'medium', play:'levels', eplace:'random', names:true};
+let stats = {played:0, correct:0, streak:0, best:0, fPlayed:0, fDist:0, fBest:null, fScore:0};
+try{ const s = JSON.parse(localStorage.getItem('way-settings')); if(s) settings = Object.assign(settings,s); }catch(e){}
+try{ const s = JSON.parse(localStorage.getItem('way-stats')); if(s) stats = Object.assign(stats,s); }catch(e){}
+if(!LEVELS[settings.level]) settings.level='medium'; if(typeof settings.names!=='boolean') settings.names=true; if(!settings.eplace) settings.eplace='random'; if(settings.mode!=='free') settings.mode='spots';
+if(!['levels','daily','unlimited','eryri','orient'].includes(settings.play)) settings.play='levels';
+const load=(k,d)=>{ try{ const v=JSON.parse(localStorage.getItem(k)); return v?Object.assign(d,v):d; }catch(e){ return d; } };
+const store=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
+let lvl = load('way-levels',{level:1,best:1,attempt:0});
+let dstats = load('way-dstats',{last:null,streak:0,best:0,played:0});
+let estats = load('way-estats',{played:0,correct:0,streak:0,best:0,fPlayed:0,fDist:0,fBest:null,fScore:0,seen:{}});
+const todayKey=(off=0)=>{const d=new Date(); d.setDate(d.getDate()+off); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+function dailyState(){
+  let ds=load('way-daily',{});
+  if(ds.date!==todayKey()) ds={date:todayKey(),round:0,scores:[],dists:[],guesses:[],done:false};
+  return ds;
+}
+function hashStr(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+// levels mode: each level a little harder than the last
+function levelParams(n){
+  const w=['clear']; if(n>=3) w.push('evening','overcast'); if(n>=6) w.push('haze','lowcloud'); if(n>=10) w.push('mist'); if(n>=15) w.push('mist','haze','lowcloud');
+  return {spots:n<=3?3:n<=7?4:n<=12?5:6, anyP:Math.min(1,Math.max(0,(n-5)/10)), look:n<12, thresh:Math.max(0.7,2.6-0.12*(n-1)), similar:n>=9, timer:n>=25?10:n>=18?15:0, landmark:n<=3, weathers:w};
+}
+// daily: five rounds, dropping pins, getting harder through the round
+const DAILY=[
+  {look:true, anyP:0,   landmark:true, timer:0,weathers:['clear']},
+  {look:true, anyP:0,   landmark:false,timer:0,weathers:['clear','evening','overcast']},
+  {look:true, anyP:0.5, landmark:false,timer:0,weathers:['overcast','haze','evening']},
+  {look:false,anyP:1,   landmark:false,timer:0,weathers:['haze','lowcloud','evening']},
+  {look:false,anyP:1,   landmark:false,timer:0,weathers:['mist','lowcloud','haze']},
+];
+const tile=p=>p>=80?'🟩':p>=50?'🟨':p>=20?'🟧':'🟥';
+const save = () => { try{ localStorage.setItem('way-settings',JSON.stringify(settings)); localStorage.setItem('way-stats',JSON.stringify(stats)); localStorage.setItem('way-estats',JSON.stringify(estats)); }catch(e){} };
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=(e0,e1,x)=>{const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0)));return t*t*(3-2*t)};
+function makeNoise(rand){
+  const G=64,t=new Float32Array(G*G); for(let k=0;k<G*G;k++) t[k]=rand()*2-1;
+  const g=(a,b)=>t[(((b%G)+G)%G)*G+(((a%G)+G)%G)];
+  return (x,y)=>{const xi=Math.floor(x),yi=Math.floor(y);let u=x-xi,v=y-yi;u=u*u*(3-2*u);v=v*v*(3-2*v);
+    return lerp(lerp(g(xi,yi),g(xi+1,yi),u),lerp(g(xi,yi+1),g(xi+1,yi+1),u),v);};
+}
+class Heap{constructor(){this.a=[];this.p=[];}
+  get size(){return this.a.length;}
+  push(v,pr){const a=this.a,p=this.p;a.push(v);p.push(pr);let i=a.length-1;while(i>0){const j=(i-1)>>1;if(p[j]<=p[i])break;[a[i],a[j]]=[a[j],a[i]];[p[i],p[j]]=[p[j],p[i]];i=j;}}
+  pop(){const a=this.a,p=this.p,top=a[0],la=a.pop(),lp=p.pop();if(a.length){a[0]=la;p[0]=lp;let i=0;for(;;){const l=2*i+1,r=l+1;let m=i;if(l<a.length&&p[l]<p[m])m=l;if(r<a.length&&p[r]<p[m])m=r;if(m===i)break;[a[i],a[m]]=[a[m],a[i]];[p[i],p[m]]=[p[m],p[i]];i=m;}}return top;}
+}
+const gx2w = i => (i/(N-1)-.5)*SIZE;
+const cellW = k => [gx2w(k%N), gx2w((k/N)|0)];
+function chaikin(pts,it){for(let n=0;n<it;n++){const o=[pts[0]];for(let k=0;k<pts.length-1;k++){const a=pts[k],b=pts[k+1];o.push([.75*a[0]+.25*b[0],.75*a[1]+.25*b[1]],[.25*a[0]+.75*b[0],.25*a[1]+.75*b[1]]);}o.push(pts[pts.length-1]);pts=o;}return pts;}
+
+// ---------- world state ----------
+let coastC=0, gNoise=null, bdAmp=80, D=LEVELS.medium, WX={maxD:2600,cloud:1e9,farD:220};
+let crags=[], walls=[], buildings=[], footpaths=[], power=null, trig=null, farm=null, feats=[], hasCrag=false;
+let H, C, M, trees, boulders, rivers, roads, maxH, contours, shore, spots, seaSide=-1, BASE=50;
+
+function coastBlend(x,z,h){
+  if(seaSide<0) return h;
+  const ds=seaSide===0?z+HALF:seaSide===1?HALF-x:seaSide===2?HALF-z:x+HALF;
+  const t=(seaSide===0||seaSide===2)?x:z;
+  const c=coastC+70*gNoise(t/230+50,7.3)+22*gNoise(t/70+80,2.1);
+  return lerp(-14,h,smooth(c-60,c+170,ds));
+}
+function outH(x,z){
+  const d=Math.hypot(Math.max(0,Math.abs(x)-HALF),Math.max(0,Math.abs(z)-HALF));
+  const n=0.5+0.65*gNoise(x/900+200,z/900+200)+0.3*gNoise(x/320+300,z/320)+0.1*gNoise(x/110,z/110+300);
+  const h=LAND+bdAmp*Math.max(0,n)*smooth(80,1600,d);
+  return coastBlend(x,z,h);
+}
+function hAt(x,z){
+  if(x<-HALF||x>HALF||z<-HALF||z>HALF){
+    return REAL?coarseAt(x,z):outH(x,z);
+  }
+  const gx=(x/SIZE+.5)*(N-1), gz=(z/SIZE+.5)*(N-1);
+  const i=Math.min(N-2,Math.floor(gx)), j=Math.min(N-2,Math.floor(gz)), u=gx-i, v=gz-j;
+  return lerp(lerp(H[j*N+i],H[j*N+i+1],u),lerp(H[(j+1)*N+i],H[(j+1)*N+i+1],u),v);
+}
+const cellOf=(x,z)=>{const i=Math.round((x/SIZE+.5)*(N-1)), j=Math.round((z/SIZE+.5)*(N-1)); return (i<0||j<0||i>N-1||j>N-1)?-1:j*N+i;};
+const canAt=(x,z)=>{const k=cellOf(x,z);return k<0?0:C[k];};
+const maskAt=(x,z)=>{const k=cellOf(x,z);return k<0?0:M[k];};
+function nearTree(x,z){const k=cellOf(x,z); if(k<0) return false; const i=k%N,j=(k/N)|0;
+  for(let dj=-3;dj<=3;dj++)for(let di=-3;di<=3;di++){const a=i+di,b=j+dj;if(a>=0&&b>=0&&a<N&&b<N&&C[b*N+a]>0)return true;} return false;}
+function markMask(pts,bit,r){
+  const rc=Math.ceil(r/CS);
+  for(const [x,z] of pts){const k=cellOf(x,z); if(k<0) continue; const i=k%N,j=(k/N)|0;
+    for(let dj=-rc;dj<=rc;dj++)for(let di=-rc;di<=rc;di++){const a=i+di,b=j+dj;if(a<0||b<0||a>=N||b>=N)continue;
+      if(Math.hypot(gx2w(a)-x,gx2w(b)-z)<=r) M[b*N+a]|=bit;}}
+}
+
+function segsAt(L){
+  const segs=[];
+  const T={1:[[3,2]],2:[[2,1]],3:[[3,1]],4:[[0,1]],5:[[0,1],[3,2]],6:[[0,2]],7:[[3,0]],8:[[3,0]],9:[[0,2]],10:[[3,0],[2,1]],11:[[0,1]],12:[[3,1]],13:[[2,1]],14:[[3,2]]};
+  for(let j=0;j<N-1;j++) for(let i=0;i<N-1;i++){
+    const a=H[j*N+i], b=H[j*N+i+1], c=H[(j+1)*N+i+1], d=H[(j+1)*N+i];
+    const idx=(a>=L?8:0)|(b>=L?4:0)|(c>=L?2:0)|(d>=L?1:0);
+    if(idx===0||idx===15) continue;
+    const E=w=>w===0?[i+(L-a)/(b-a),j]:w===1?[i+1,j+(L-b)/(c-b)]:w===2?[i+(L-d)/(c-d),j+1]:[i,j+(L-a)/(d-a)];
+    for(const [e1,e2] of T[idx]){const p=E(e1),q=E(e2);segs.push(p[0],p[1],q[0],q[1]);}
+  }
+  return segs;
+}
+
+function makeRiver(rand){
+  for(let tries=0;tries<30;tries++){
+    const i0=15+Math.floor(rand()*(N-30)), j0=15+Math.floor(rand()*(N-30)), k0=j0*N+i0;
+    if(H[k0]<LAND+22 || H[k0]>maxH*0.92 || (M[k0]&1)) continue;
+    const par=new Int32Array(N*N).fill(-2), steps=new Uint16Array(N*N), hp=new Heap();
+    par[k0]=-1; hp.push(k0,H[k0]); let end=-1;
+    while(hp.size){
+      const k=hp.pop(), i=k%N, j=(k/N)|0;
+      if(H[k]<0||i<3||j<3||i>N-4||j>N-4||(k!==k0&&(M[k]&1))){end=k;break;}
+      for(const [di,dj] of NB){const a=i+di,b=j+dj;if(a<0||b<0||a>=N||b>=N)continue;const n=b*N+a;if(par[n]!==-2)continue;
+        par[n]=k; steps[n]=steps[k]+1; hp.push(n,H[n]+0.04*steps[n]);}
+    }
+    if(end<0) continue;
+    const path=[]; for(let k=end;k!==-1;k=par[k]) path.push(k); path.reverse();
+    if(path.length<40) continue;
+    let run=H[path[0]], rise=0; for(const k of path){ if(H[k]>run) rise=Math.max(rise,H[k]-run); else run=H[k]; }
+    if(rise>7) continue;
+    // carve a channel that always runs downhill
+    let bed=H[path[0]]-0.8;
+    for(const k of path){
+      bed=Math.min(bed,H[k]-0.8);
+      const i=k%N,j=(k/N)|0;
+      for(let dj=-2;dj<=2;dj++)for(let di=-2;di<=2;di++){const a=i+di,b=j+dj;if(a<0||b<0||a>=N||b>=N)continue;
+        const d=Math.hypot(di,dj)/2.2; if(d>1) continue; const n=b*N+a; H[n]=Math.min(H[n],lerp(bed-0.6,H[n],d*d));}
+    }
+    const pts=chaikin(path.filter((_,k)=>k%2===0||k===path.length-1).map(cellW),2);
+    markMask(pts,1,9);
+    return pts;
+  }
+  return null;
+}
+
+function makeRoad(rand){
+  const sides=[0,1,2,3].filter(s=>s!==seaSide);
+  const edgeCell=(side,t)=>{const u=Math.round(t*(N-1)); return side===0?u:side===1?u*N+N-1:side===2?(N-1)*N+u:u*N;};
+  for(let tries=0;tries<8;tries++){
+    const s1=sides[Math.floor(rand()*sides.length)]; let s2=sides[Math.floor(rand()*sides.length)]; if(s2===s1) s2=sides[(sides.indexOf(s1)+1)%sides.length];
+    const st=edgeCell(s1,0.15+0.7*rand()), en=edgeCell(s2,0.15+0.7*rand());
+    if(H[st]<2||H[en]<2) continue;
+    const g=new Float64Array(N*N).fill(Infinity), par=new Int32Array(N*N).fill(-1), done=new Uint8Array(N*N), hp=new Heap();
+    const ti=en%N, tj=(en/N)|0; g[st]=0; hp.push(st,0);
+    while(hp.size){
+      const k=hp.pop(); if(done[k]) continue; done[k]=1; if(k===en) break;
+      const i=k%N,j=(k/N)|0;
+      for(const [di,dj] of NB){const a=i+di,b=j+dj;if(a<0||b<0||a>=N||b>=N)continue;const n=b*N+a;if(done[n])continue;
+        const l=(di&&dj?1.4142:1)*CS, gr=(H[n]-H[k])/l;
+        const c=g[k]+l*(1+90*gr*gr)+(H[n]<2?1e5:0)+((M[n]&1)?35:0);
+        if(c<g[n]){g[n]=c;par[n]=k;hp.push(n,c+Math.hypot(a-ti,b-tj)*CS);}}
+    }
+    if(!done[en]) continue;
+    const path=[]; for(let k=en;k!==-1;k=par[k]) path.push(k); path.reverse();
+    if(path.some(k=>H[k]<1)) continue;
+    const pts=chaikin(path.filter((_,k)=>k%2===0||k===path.length-1).map(cellW),3);
+    markMask(pts,2,8);
+    return pts;
+  }
+  return null;
+}
+
+function astar(st,en,cost){
+  const g=new Float64Array(N*N).fill(Infinity), par=new Int32Array(N*N).fill(-1), done=new Uint8Array(N*N), hp=new Heap();
+  const ti=en%N,tj=(en/N)|0; g[st]=0; hp.push(st,0);
+  while(hp.size){const k=hp.pop(); if(done[k])continue; done[k]=1; if(k===en)break; const i=k%N,j=(k/N)|0;
+    for(const [di,dj] of NB){const a=i+di,b=j+dj; if(a<0||b<0||a>=N||b>=N)continue; const n=b*N+a; if(done[n])continue;
+      const l=(di&&dj?1.4142:1)*CS, c=g[k]+cost(k,n,l); if(c<g[n]){g[n]=c;par[n]=k;hp.push(n,c+Math.hypot(a-ti,b-tj)*CS);}}}
+  if(!done[en]) return null; const path=[]; for(let k=en;k!==-1;k=par[k]) path.push(k); return path.reverse();
+}
+function genTerrain(rand){
+  const noise=makeNoise(rand);
+  seaSide = rand()<0.45 ? Math.floor(rand()*4) : -1;
+  BASE = seaSide>=0 ? 0 : 30+10*Math.floor(rand()*12);
+  H=new Float32Array(N*N); C=new Float32Array(N*N); M=new Uint8Array(N*N);
+  // hills and ridges
+  const hills=[]; const n=5+Math.floor(rand()*4);
+  for(let k=0;k<n;k++){
+    let a = k===0 ? 55+rand()*60 : 15+rand()*50;
+    if(k>1 && rand()<0.15) a*=-0.5;
+    hills.push({cx:(0.22+0.56*rand()-.5)*SIZE, cz:(0.22+0.56*rand()-.5)*SIZE, a, s1:90+rand()*210, r:0.28+rand()*0.72, th:rand()*Math.PI});
+  }
+  for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+    const x0=gx2w(i), z0=gx2w(j);
+    const x=x0+70*noise(x0/320+11,z0/320), z=z0+70*noise(x0/320,z0/320+23);
+    let h=0;
+    for(const p of hills){const dx=x-p.cx,dz=z-p.cz,c=Math.cos(p.th),s=Math.sin(p.th),u=dx*c+dz*s,v=-dx*s+dz*c,s2=p.s1*p.r;
+      h+=p.a*Math.exp(-(u*u/(2*p.s1*p.s1)+v*v/(2*s2*s2)));}
+    h+=16*noise(x/220,z/220)+8*noise(x/95+17,z/95+5)+3.2*noise(x/42+3,z/42+9)+1.1*noise(x/18+7,z/18+1);
+    const rg=1-Math.abs(noise(x/160+60,z/160+60)); h+=20*(rg*rg-0.45)*smooth(15,55,h);
+    const kn=1-Math.abs(noise(x/70+90,z/70+30)); h+=7*(kn*kn*kn-0.25)*smooth(10,40,h);
+    H[j*N+i] = h>4 ? h : 4*Math.exp((h-4)/4);
+  }
+  // re-entrants: small valleys cut into the hillsides, running downhill
+  const nRe=3+Math.floor(rand()*5); let made=0;
+  for(let t=0;t<300&&made<nRe;t++){
+    const i=4+Math.floor(rand()*(N-8)), j=4+Math.floor(rand()*(N-8)), k=j*N+i;
+    if(H[k]<25) continue;
+    const gx=(H[k+1]-H[k-1])/(2*CS), gz=(H[k+N]-H[k-N])/(2*CS), gm=Math.hypot(gx,gz);
+    if(gm<0.08||gm>0.6) continue;
+    const dx=-gx/gm, dz=-gz/gm, cx=gx2w(i)+dx*15, cz=gx2w(j)+dz*15;
+    const sa=45+rand()*45, sc=12+rand()*10, dep=5+rand()*7, R=Math.ceil(3*sa/CS);
+    for(let b=Math.max(0,j-R);b<=Math.min(N-1,j+R);b++)for(let a=Math.max(0,i-R);a<=Math.min(N-1,i+R);a++){
+      const px=gx2w(a)-cx, pz=gx2w(b)-cz, u=px*dx+pz*dz, v=-px*dz+pz*dx;
+      H[b*N+a]-=dep*Math.exp(-(u*u/(2*sa*sa)+v*v/(2*sc*sc)));
+    }
+    made++;
+  }
+  // crags: sharp rock steps across some hillsides
+  crags=[];
+  const nCr=rand()<0.35?0:1+Math.floor(rand()*3);
+  for(let t=0;t<400&&crags.length<nCr;t++){
+    const i=6+Math.floor(rand()*(N-12)), j=6+Math.floor(rand()*(N-12)), k=j*N+i;
+    if(H[k]<35) continue;
+    const gx=(H[k+1]-H[k-1])/(2*CS), gz=(H[k+N]-H[k-N])/(2*CS), gm=Math.hypot(gx,gz);
+    if(gm<0.1||gm>0.5) continue;
+    const dx=-gx/gm, dz=-gz/gm, cx=gx2w(i), cz=gx2w(j), L=50+rand()*70, hc=9+rand()*9, R=Math.ceil((L+80)/CS), sv=L/2.4;
+    for(let b=Math.max(0,j-R);b<=Math.min(N-1,j+R);b++)for(let a=Math.max(0,i-R);a<=Math.min(N-1,i+R);a++){
+      const px=gx2w(a)-cx, pz=gx2w(b)-cz, u=px*dx+pz*dz, v=-px*dz+pz*dx;
+      const w=Math.exp(-(v*v)/(2*sv*sv))*Math.exp(-(u*u)/(2*45*45)); if(w<0.005) continue;
+      H[b*N+a]+=hc*(1/(1+Math.exp(u/3))-0.5)*w;
+    }
+    crags.push({x:cx,z:cz});
+  }
+  // edges, and sea along one side
+  coastC=SIZE*(0.13+0.12*rand()); gNoise=noise; bdAmp=35+rand()*110;
+  for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+    let e=1e9; if(seaSide!==0)e=Math.min(e,j); if(seaSide!==1)e=Math.min(e,N-1-i); if(seaSide!==2)e=Math.min(e,N-1-j); if(seaSide!==3)e=Math.min(e,i);
+    const k=j*N+i; let h=LAND+Math.max(0,H[k])*smooth(0,0.17,e/(N-1));
+    h=coastBlend(gx2w(i),gx2w(j),h);
+    H[k]=h;
+  }
+  // lakes in the low ground
+  const nLakes = rand()<0.45?0:(rand()<0.7?1:2);
+  for(let l=0,t=0;l<nLakes&&t<60;t++){
+    const i=Math.floor((0.18+0.64*rand())*(N-1)), j=Math.floor((0.18+0.64*rand())*(N-1)), k=j*N+i;
+    if(H[k]<3||H[k]>LAND+18) continue;
+    const rx=40+rand()*70, rz=rx*(0.45+0.5*rand()), th=rand()*Math.PI, D=H[k]+3+rand()*3, cx=gx2w(i), cz=gx2w(j), R=Math.ceil(2.2*rx/CS);
+    for(let b=Math.max(0,j-R);b<=Math.min(N-1,j+R);b++)for(let a=Math.max(0,i-R);a<=Math.min(N-1,i+R);a++){
+      const px=gx2w(a)-cx, pz=gx2w(b)-cz, u=px*Math.cos(th)+pz*Math.sin(th), v=-px*Math.sin(th)+pz*Math.cos(th);
+      const q=(u*u)/(rx*rx)+(v*v)/(rz*rz)+0.25*noise(gx2w(a)/40+90,gx2w(b)/40);
+      H[b*N+a]-=D*Math.exp(-q*q*0.8);
+    }
+    l++;
+  }
+  maxH=0; for(let k=0;k<N*N;k++) if(H[k]>maxH) maxH=H[k];
+  // rivers and roads
+  rivers=[]; roads=[];
+  if(rand()<0.75){const r=makeRiver(rand); if(r) rivers.push(r);}
+  if(rivers.length && rand()<0.35){const r=makeRiver(rand); if(r) rivers.push(r);}
+  if(rand()<0.75){const r=makeRoad(rand); if(r) roads.push(r);}
+  const openSides=[0,1,2,3].filter(s=>s!==seaSide);
+  // power line: wooden poles in a straight line across the map
+  power=null;
+  if(rand()<0.4){
+    const pe=(side,t)=>{const u=(t-.5)*SIZE; return side===0?[u,-HALF]:side===1?[HALF,u]:side===2?[u,HALF]:[-HALF,u];};
+    const s1=openSides[Math.floor(rand()*openSides.length)]; let s2=openSides[Math.floor(rand()*openSides.length)]; if(s2===s1) s2=openSides[(openSides.indexOf(s1)+1)%openSides.length];
+    const a=pe(s1,0.1+0.8*rand()), b=pe(s2,0.1+0.8*rand()), L=Math.hypot(b[0]-a[0],b[1]-a[1]), n=Math.max(2,Math.round(L/75));
+    const poles=[]; for(let k=0;k<=n;k++){const t=lerp(0.01,0.99,k/n), x=lerp(a[0],b[0],t), z=lerp(a[1],b[1],t); if(hAt(x,z)>1.5&&!(maskAt(x,z)&1)) poles.push([x,z]);}
+    if(poles.length>=3){ power={a,b,poles}; const dense=[]; for(let t=0;t<=1;t+=5/L) dense.push([lerp(a[0],b[0],t),lerp(a[1],b[1],t)]); markMask(dense,32,9); }
+  }
+  // a farm with its buildings and walled fields
+  buildings=[]; walls=[]; farm=null;
+  const farmOk=(x,z)=>Math.abs(x)<HALF-70&&Math.abs(z)<HALF-70&&hAt(x,z)>4&&slopeAt(x,z)<0.12&&!(maskAt(x,z)&(1|2|32));
+  if(rand()<0.8){
+    let fc=null;
+    if(roads.length){ const rd=roads[0]; for(let t=0;t<50&&!fc;t++){ const p=rd[Math.floor(rand()*rd.length)], a=rand()*6.283, d=24+rand()*12, x=p[0]+Math.cos(a)*d, z=p[1]+Math.sin(a)*d; if(farmOk(x,z)) fc=[x,z]; } }
+    for(let t=0;t<80&&!fc;t++){ const x=(0.15+0.7*rand()-.5)*SIZE, z=(0.15+0.7*rand()-.5)*SIZE; if(farmOk(x,z)&&hAt(x,z)<LAND+maxH*0.45) fc=[x,z]; }
+    if(fc){
+      const th=rand()*Math.PI, U=[Math.cos(th),Math.sin(th)], V=[-Math.sin(th),Math.cos(th)];
+      farm={x:fc[0],z:fc[1]};
+      const specs=[{u:0,v:0,w:12,d:7,h:5,t:'house'}], slots=[[24,0],[0,20],[-22,4]], nb=1+Math.floor(rand()*3);
+      for(let k=0;k<nb;k++){const [su,sv]=slots[k]; specs.push({u:su+(rand()-.5)*4,v:sv+(rand()-.5)*4,w:16+rand()*10,d:9+rand()*4,h:5.5+rand()*1.5,t:'barn'});}
+      for(const sp of specs){ const x=fc[0]+U[0]*sp.u+V[0]*sp.v, z=fc[1]+U[1]*sp.u+V[1]*sp.v;
+        if(hAt(x,z)<3||(maskAt(x,z)&(1|2))||slopeAt(x,z)>0.2) continue;
+        buildings.push({x,z,w:sp.w,d:sp.d,h:sp.h,th,t:sp.t}); markMask([[x,z]],8,Math.max(sp.w,sp.d)/2+5); }
+      const cell=70+rand()*40, R=200+rand()*110, K=Math.ceil(R/cell)+1, fth=th+(rand()-.5)*0.3;
+      const FU=[Math.cos(fth),Math.sin(fth)], FV=[-Math.sin(fth),Math.cos(fth)];
+      const node=(a,b)=>[fc[0]+FU[0]*a*cell+FV[0]*b*cell+10*noise(a*3.1+b+40,5), fc[1]+FU[1]*a*cell+FV[1]*b*cell+10*noise(a+40,b*2.7+9)];
+      const segOk=(p,q)=>{ const mx=(p[0]+q[0])/2, mz=(p[1]+q[1])/2;
+        if(Math.hypot(mx-fc[0],mz-fc[1])>R*(0.8+0.35*noise(mx/150+20,mz/150))) return false;
+        for(let s=0;s<=6;s++){const x=lerp(p[0],q[0],s/6), z=lerp(p[1],q[1],s/6);
+          if(Math.abs(x)>HALF-5||Math.abs(z)>HALF-5||hAt(x,z)<2.5||(maskAt(x,z)&(1|2|8))||slopeAt(x,z)>0.35) return false;}
+        return true; };
+      for(let a=-K;a<=K;a++)for(let b=-K;b<=K;b++){ const p=node(a,b); for(const q of [node(a+1,b),node(a,b+1)]) if(rand()>0.12&&segOk(p,q)) walls.push([p[0],p[1],q[0],q[1]]); }
+    }
+  }
+  // trig pillar on the summit, and a footpath up to it
+  let tk=0; for(let k=0;k<N*N;k++) if(H[k]>H[tk]) tk=k;
+  trig = H[tk]>LAND+25 ? {x:cellW(tk)[0], z:cellW(tk)[1]} : null;
+  footpaths=[];
+  if(trig&&rand()<0.75){
+    let st=-1;
+    if(farm) st=cellOf(farm.x,farm.z);
+    else if(roads.length){const p=roads[0][Math.floor(rand()*roads[0].length)]; st=cellOf(p[0],p[1]);}
+    else { const sd=openSides[Math.floor(rand()*openSides.length)], u=Math.round((0.2+0.6*rand())*(N-1)); st=sd===0?u:sd===1?u*N+N-1:sd===2?(N-1)*N+u:u*N; }
+    const en=cellOf(trig.x,trig.z);
+    if(st>=0&&H[st]>1){
+      const path=astar(st,en,(k,n,l)=>{const gr=(H[n]-H[k])/l; return l*(1+10*gr*gr)+(Math.abs(gr)>0.8?l*30:0)+(H[n]<1.5?1e5:0)+((M[n]&8)&&!(M[k]&8)?2000:0);});
+      if(path&&path.length>12) footpaths.push(chaikin(path.filter((_,k)=>k%2===0||k===path.length-1).map(cellW),2));
+    }
+  }
+  // woods: irregular plantations, ragged broadleaf woods, strips, copses, riverside and lone trees
+  trees=[];
+  const MAXT=2600;
+  const okTree=(x,z)=>Math.abs(x)<HALF-8&&Math.abs(z)<HALF-8&&hAt(x,z)>1.8&&!(maskAt(x,z)&(1|2|8|32));
+  const addT=(x,z,t,lone)=>{ if(trees.length>=MAXT||!okTree(x,z)) return; const h=t==='c'?11+rand()*5:6+rand()*7; trees.push({x,z,h,r:h*(t==='c'?0.28:0.36),t,lone:!!lone}); };
+  const inPoly=(x,z,P)=>{let c=false; for(let i=0,j=P.length-1;i<P.length;j=i++){const A=P[i],B=P[j]; if(((A[1]>z)!==(B[1]>z))&&(x<(B[0]-A[0])*(z-A[1])/(B[1]-A[1])+A[0])) c=!c;} return c;};
+  const spot=()=>[(0.12+0.76*rand()-.5)*SIZE,(0.12+0.76*rand()-.5)*SIZE];
+  const heavy=rand()<0.3;
+  // conifer plantations: angular, irregular outlines, sometimes with a felled clearing
+  const nPl = heavy ? 2+Math.floor(rand()*3) : (rand()<0.65?1+Math.floor(rand()*2):0);
+  for(let w=0;w<nPl;w++){
+    const [cx,cz]=spot(), R=60+rand()*110, el=1+rand()*1.3, th=rand()*Math.PI, n=5+Math.floor(rand()*5), c=Math.cos(th), s=Math.sin(th);
+    const angs=[]; for(let k=0;k<n;k++) angs.push(rand()*Math.PI*2); angs.sort((p,q)=>p-q);
+    const P=angs.map(a=>{const r=R*(0.55+0.7*rand()), u=Math.cos(a)*r*el, v=Math.sin(a)*r/el; return [cx+u*c-v*s, cz+u*s+v*c];});
+    const holes=rand()<0.35?[[cx+(rand()-.5)*R*0.8, cz+(rand()-.5)*R*0.8, 18+rand()*25]]:[];
+    const ext=R*el*1.3, gth=th+(rand()-.5)*0.5, gc=Math.cos(gth), gs=Math.sin(gth);
+    for(let u=-ext;u<=ext;u+=8.5) for(let v=-ext;v<=ext;v+=8.5){
+      const x=cx+u*gc-v*gs+(rand()-.5)*3, z=cz+u*gs+v*gc+(rand()-.5)*3;
+      if(!inPoly(x,z,P)||rand()<0.06||holes.some(h=>Math.hypot(x-h[0],z-h[1])<h[2])) continue;
+      addT(x,z,'c');
+    }
+  }
+  // broadleaf woods: ragged, lobed outlines
+  const nBr = heavy ? 2+Math.floor(rand()*3) : Math.floor(rand()*2.6);
+  for(let w=0;w<nBr;w++){
+    const [cx,cz]=spot(), R=45+rand()*90, el=1+rand()*1.2, th=rand()*Math.PI, c=Math.cos(th), s=Math.sin(th), ox=rand()*50, oz=rand()*50;
+    const cnt=Math.floor(Math.PI*R*R*el/170);
+    for(let k=0;k<cnt*2.5;k++){
+      const u=(rand()*2-1)*R*el*1.4, v=(rand()*2-1)*R/el*1.4, x=cx+u*c-v*s, z=cz+u*s+v*c;
+      const d=Math.hypot(u/el,v*el), edge=R*(0.62+0.5*noise(x/45+ox,z/45+oz)+0.18*noise(x/15+oz,z/15+ox));
+      if(d>edge) continue; addT(x,z,'d');
+    }
+  }
+  // shelter belts: long thin strips, gently curving
+  const nSt = Math.floor(rand()*(heavy?3:2.2));
+  for(let w=0;w<nSt;w++){
+    const [cx,cz]=spot(), L=140+rand()*220, wd=12+rand()*16, th=rand()*Math.PI, bend=(rand()-.5)*0.004, ty=rand()<0.5?'c':'d';
+    for(let t=-L/2;t<=L/2;t+=7) for(let o=-wd/2;o<=wd/2;o+=7.5){
+      const a=th+bend*t, x=cx+Math.cos(th)*t-Math.sin(a)*o+(rand()-.5)*3, z=cz+Math.sin(th)*t+Math.cos(a)*o+bend*t*t*0.5+(rand()-.5)*3;
+      if(rand()<0.1) continue; addT(x,z,ty);
+    }
+  }
+  // riverside trees
+  for(const r of rivers){ if(rand()<0.55) for(let k=0;k<r.length;k+=3){ if(rand()<0.35){const a=r[Math.max(0,k-1)], b=r[Math.min(r.length-1,k+1)], dx=b[0]-a[0], dz=b[1]-a[1], l=Math.hypot(dx,dz)||1, side=rand()<0.5?-1:1, o=11+rand()*5; addT(r[k][0]-dz/l*o*side, r[k][1]+dx/l*o*side,'d',true);} } }
+  // small copses
+  const nCp = heavy ? 4+Math.floor(rand()*5) : 2+Math.floor(rand()*4);
+  for(let w=0;w<nCp;w++){ const [cx,cz]=spot(), R=10+rand()*22, n=4+Math.floor(rand()*12); for(let k=0;k<n;k++){const a=rand()*6.283, d=Math.sqrt(rand())*R; addT(cx+Math.cos(a)*d,cz+Math.sin(a)*d,rand()<0.2?'c':'d',true);} }
+  // lone trees, some along the field walls
+  for(let k=0;k<6+Math.floor(rand()*14);k++){ const [x,z]=spot(); if(hAt(x,z)<LAND+maxH*0.5) addT(x,z,'d',true); }
+  for(const wl of walls){ if(rand()<0.25){const t=rand(); addT(lerp(wl[0],wl[2],t)+2.5,lerp(wl[1],wl[3],t)+2.5,'d',true);} }
+  for(const t of trees){const k=cellOf(t.x,t.z); if(k<0) continue; const i=k%N,j=(k/N)|0;
+    for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const a=i+di,b=j+dj;if(a>=0&&b>=0&&a<N&&b<N)C[b*N+a]=Math.max(C[b*N+a],t.h*(di||dj?0.7:1));}}
+  // boulders: a few clusters on higher ground plus strays
+  boulders=[];
+  const okB=(x,z)=>Math.abs(x)<HALF-10&&Math.abs(z)<HALF-10&&hAt(x,z)>2.5&&!(maskAt(x,z)&(1|2|8))&&canAt(x,z)===0;
+  const nCl=2+Math.floor(rand()*3);
+  for(let c=0,t=0;c<nCl&&t<80;t++){
+    const x=(0.1+0.8*rand()-.5)*SIZE, z=(0.1+0.8*rand()-.5)*SIZE;
+    if(hAt(x,z)<LAND+maxH*0.25||!okB(x,z)) continue;
+    const cnt=4+Math.floor(rand()*9);
+    for(let b=0;b<cnt;b++){const bx=x+(rand()*2-1)*35, bz=z+(rand()*2-1)*35; if(okB(bx,bz)) boulders.push({x:bx,z:bz,s:1+rand()*2.6,rot:rand()*6.28});}
+    c++;
+  }
+  for(let b=0;b<8;b++){const x=(0.1+0.8*rand()-.5)*SIZE, z=(0.1+0.8*rand()-.5)*SIZE; if(okB(x,z)) boulders.push({x,z,s:1.2+rand()*2,rot:rand()*6.28});}
+  markMask(boulders.map(b=>[b.x,b.z]),4,7);
+  // contours, shoreline, spot heights
+  contours=[];
+  for(let v=Math.ceil((BASE+0.5)/CI)*CI; v-BASE<=maxH; v+=CI){ contours.push({L:v-BASE, v, segs:segsAt(v-BASE)}); }
+  shore = segsAt(0);
+  spots=[];
+  const cand=[];
+  for(let j=6;j<N-6;j+=2)for(let i=6;i<N-6;i+=2){const k=j*N+i; if(H[k]<LAND+15) continue; let top=true;
+    for(let dj=-6;dj<=6&&top;dj++)for(let di=-6;di<=6;di++){if((di||dj)&&H[(j+dj)*N+i+di]>H[k]){top=false;break;}}
+    if(top) cand.push(k);}
+  cand.sort((a,b)=>H[b]-H[a]); for(const k of cand){ if(spots.length>=3) break; if(spots.every(s=>Math.hypot(s.x-cellW(k)[0],s.z-cellW(k)[1])>150)) spots.push({x:cellW(k)[0],z:cellW(k)[1],v:Math.round(BASE+H[k])}); }
+  hasCrag=false;
+  for(let j=1;j<N-1&&!hasCrag;j++)for(let i=1;i<N-1;i++){const k=j*N+i; if(H[k]<1) continue; if(Math.hypot(H[k+1]-H[k-1],H[k+N]-H[k-N])/(2*CS)>1.05){hasCrag=true;break;}}
+  feats=[];
+  trees.forEach((t,k)=>{if(k%5===0) feats.push([t.x,t.z,hAt(t.x,t.z)+t.h]);});
+  for(let j=2;j<N;j+=4)for(let i=2;i<N;i+=4){if(H[j*N+i]<0) feats.push([gx2w(i),gx2w(j),0.3]);}
+  buildings.forEach(b=>feats.push([b.x,b.z,hAt(b.x,b.z)+b.h+2]));
+  if(power) power.poles.forEach(p=>feats.push([p[0],p[1],hAt(p[0],p[1])+10]));
+  if(trig) feats.push([trig.x,trig.z,hAt(trig.x,trig.z)+1.4]);
+}
+
+function profile(x,z,deg,info){
+  const eye=hAt(x,z)+EYE, out=[], n=31, th0=deg*Math.PI/180; let far=0, near=0, vis=0;
+  for(let k=0;k<n;k++){
+    const az=th0+((k/(n-1))-.5)*HFOV*Math.PI/180, dx=Math.sin(az), dz=-Math.cos(az);
+    let best=-1e9, bd=0, d=8, nb=-1e9, fb=-1e9;
+    if(REAL) for(const dn of [1.5,3,5]){ const a=Math.atan2(hAt(x+dx*dn,z+dz*dn)-eye,dn); if(a>nb) nb=a; if(a>best){best=a;bd=dn;} }
+    while(d<WX.maxD){ const px=x+dx*d, pz=z+dz*d; const ang=Math.atan2(Math.min(WX.cloud,Math.max(0,hAt(px,pz))+canAt(px,pz))-eye,d); if(ang>best){best=ang;bd=d;} if(d<60){if(ang>nb)nb=ang;} else if(d>WX.farD&&ang>fb) fb=ang; d+=Math.max(4,d*0.025); }
+    out.push(best*180/Math.PI); if(bd>WX.farD) far++; if(bd<70) near++; if(fb>nb+0.004) vis++;
+  }
+  if(info){ info.far=far/n; info.max=Math.max(...out); info.range=info.max-Math.min(...out); info.med=[...out].sort((a,b)=>a-b)[out.length>>1]; info.near=near/n; info.vis=vis/n; }
+  return out;
+}
+function slopeAt(x,z){ const e=6; return Math.hypot(hAt(x+e,z)-hAt(x-e,z),hAt(x,z+e)-hAt(x,z-e))/(2*e); }
+const pdiff=(p,q)=>p.reduce((s,v,k)=>s+Math.abs(v-q[k]),0)/p.length;
+const standable=(x,z)=>hAt(x,z)>2.5 && !(maskAt(x,z)&29) && !nearTree(x,z);
+
+function landmarkVisible(x,z,deg){
+  const eye=hAt(x,z)+EYE, maxD=Math.min(1100,WX.maxD);
+  for(const f of feats){
+    const dx=f[0]-x, dz=f[1]-z, d=Math.hypot(dx,dz); if(d<30||d>maxD) continue;
+    let az=Math.atan2(dx,-dz)*180/Math.PI-deg; az=((az+540)%360)-180; if(Math.abs(az)>HFOV/2-4) continue;
+    let ok=true; for(let s=1;s<20;s++){const t=s/20; if(hAt(x+dx*t,z+dz*t)>lerp(eye,f[2],t)+0.3){ok=false;break;}}
+    if(ok) return true;
+  }
+  return false;
+}
+
+// share of the ground in view (out to ~550 m) that falls inside the map
+function inViewFrac(x,z,deg){
+  let n=0,ok=0;
+  for(let a=-1;a<=1.001;a+=0.25) for(const d of [120,250,400,550]){
+    const az=(deg+a*HFOV/2)*Math.PI/180, px=x+Math.sin(az)*d, pz=z-Math.cos(az)*d;
+    n++; if(Math.abs(px)<HALF-15&&Math.abs(pz)<HALF-15) ok++;
+  }
+  return ok/n;
+}
+function pickPoints(rand,count,deg,strict){
+  const rp=()=>{ if(REAL&&pathPts.length&&rand()<0.6){ const p=pathPts[Math.floor(rand()*pathPts.length)]; return {x:p[0]+(rand()-.5)*4, z:p[1]+(rand()-.5)*4}; } return {x:(0.14+0.72*rand()-.5)*SIZE, z:(0.14+0.72*rand()-.5)*SIZE}; };
+  const okEye=p=>hAt(p.x,p.z)+EYE<WX.cloud-12, mist=WX.maxD<1000;
+  let fallback=null;
+  for(let att=0; att<200; att++){
+    const loose=!strict&&att>=150;
+    const t=rp(); if(!standable(t.x,t.z)||!okEye(t)) continue;
+    if(inViewFrac(t.x,t.z,deg)<(loose?0.6:0.8)) continue;
+    if(slopeAt(t.x,t.z)>(REAL?0.45:0.18)&&!loose) continue;
+    const info={}; const tp=profile(t.x,t.z,deg,info);
+    if((info.range<(mist?1.5:2.5)||info.max>(REAL?32:mist?12:9)||(REAL&&(info.med>(mist?10:13)||info.near>0.25||(!mist&&info.vis<0.6)))||info.far<(REAL?(mist?0.3:0.6):mist?0.5:0.7))&&(!loose||(REAL&&(info.med>(mist?12:16)||info.far<(mist?0.2:0.45)||info.near>0.4||(!mist&&info.vis<0.35))))) continue;
+    if(D.landmark&&!loose&&!landmarkVisible(t.x,t.z,deg)) continue;
+    const pts=[t];
+    if(count>1){
+      const cands=[];
+      for(let k=0;k<300&&cands.length<30;k++){
+        const c=rp(); if(!standable(c.x,c.z)||!okEye(c)||slopeAt(c.x,c.z)>(REAL?0.6:0.3)||inViewFrac(c.x,c.z,deg)<0.7) continue;
+        if(Math.hypot(c.x-t.x,c.z-t.z)<170) continue;
+        const df=pdiff(profile(c.x,c.z,deg),tp); if(df<D.thresh) continue;
+        cands.push({c,df});
+      }
+      if(D.similar) cands.sort((a,b)=>a.df-b.df);
+      for(const {c} of cands){ if(pts.length>=count) break; if(pts.every(p=>Math.hypot(p.x-c.x,p.z-c.z)>=170)) pts.push(c); }
+    }
+    if(pts.length===count) return pts;
+    if(!fallback||pts.length>fallback.length) fallback=pts;
+  }
+  if(strict) return null;
+  if(!fallback){ for(let k=0;k<500;k++){const c=rp(); if(standable(c.x,c.z)){fallback=[c];break;}} if(!fallback) fallback=[{x:0,z:0}]; }
+  while(fallback.length<count){ const c=rp(); if((REAL?standable(c.x,c.z):hAt(c.x,c.z)>2)&&!fallback.some(p=>Math.hypot(p.x-c.x,p.z-c.z)<120)) fallback.push(c); }
+  return fallback;
+}
+
+// ---------- Eryri: real terrain from Welsh Government LiDAR and OpenStreetMap ----------
+// Real places. Each new round picks one at random (or the one chosen in the picker);
+// difficulty comes from the same settings as Unlimited.
+const ERY=[
+  {id:'padarn', name:'Llyn Padarn'},
+  {id:'gwynant', name:'Llyn Gwynant'},
+  {id:'crafnant', name:'Llyn Crafnant'},
+  {id:'beddgelert', name:'Beddgelert a Bwlch Aberglaslyn'},
+  {id:'ogwen', name:'Llyn Ogwen a Thryfan'},
+  {id:'idwal', name:'Cwm Idwal'},
+  {id:'cwmbychan', name:'Llyn Cwm Bychan'},
+  {id:'llydaw', name:'Llyn Llydaw o Ben-y-Pas'},
+  {id:'rhydddu', name:'Rhyd-Ddu a Llyn Cwellyn'},
+  {id:'stwlan', name:'Cwm Stwlan'},
+  {id:'siabod', name:'Moel Siabod'},
+  {id:'cnicht', name:'Cnicht'},
+  {id:'ygarn', name:'Y Garn a Thwll Du'},
+  {id:'cau', name:'Llyn Cau, Cadair Idris'},
+  {id:'nantlle', name:'Crib Nantlle'},
+  {id:'glyderfach', name:'Glyder Fach a Chastell y Gwynt'},
+  {id:'wyddfa', name:'Copa’r Wyddfa'},
+  {id:'aran', name:'Aran Fawddwy'},
+  {id:'cribgoch', name:'Crib Goch'},
+  {id:'carneddau', name:'Y Carneddau yn y niwl'},
+  {id:'rhinogfawr', name:'Rhinog Fawr a Llyn Du'},
+  {id:'llynhywel', name:'Llyn Hywel a Rhinog Fach'},
+  {id:'bodlyn', name:'Llyn Bodlyn a Diffwys'},
+  {id:'arenig', name:'Arenig Fawr'},
+  {id:'moelhebog', name:'Moel Hebog'},
+  {id:'cwmsilyn', name:'Cwm Silyn'},
+  {id:'moeleilio', name:'Moel Eilio'},
+  {id:'dinas', name:'Llyn Dinas'},
+  {id:'llagi', name:'Llyn Llagi a Llyn yr Adar'},
+  {id:'glyderfawr', name:'Glyder Fawr a Llyn y Cŵn'},
+  {id:'dafydd', name:'Carnedd Dafydd a Ffynnon Lloer'},
+  {id:'cowlyd', name:'Llyn Cowlyd'},
+  {id:'eigiau', name:'Llyn Eigiau'},
+];
+let H0=null, N0=0, REAL=null, CH=null, G=null, lakes=[], cliffs=[], rails=[], rockP=[], woodP=[], places=[], pathPts=[];
+// messages over the 3D view while a place loads, or if it can't be loaded
+function vmsg(html){ const er=$('#err'); if(!html){ if(!er.dataset.fatal) er.style.display='none'; return; } er.style.display='grid'; er.innerHTML='<div>'+html+'</div>'; }
+function loadFailMsg(id){ vmsg(`<b>${tx('loadFail')}</b><br><small style="opacity:.8">Ffeil ar goll:  eryri/${id}.json</small>`); $('#status').innerHTML=`<b>${tx('loadFail')}</b>`; }
+const ERYC={};   // place data by id, loaded when first needed
+let ERYALL=null;
+async function loadPlace(id){
+  if(ERYC[id]) return ERYC[id];
+  const el=document.getElementById('eryriData'), b64=el?el.textContent.replace(/\s+/g,''):'';
+  if(b64){   // everything embedded in the page (the artefact version)
+    if(!ERYALL){ const bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+      ERYALL=JSON.parse(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).text());
+      for(const d of ERYALL) ERYC[d.id]=d; }
+    return ERYC[id];
+  }
+  const r=await fetch('eryri/'+id+'.json'); if(!r.ok) throw new Error('HTTP '+r.status);   // the website: one file per place
+  return ERYC[id]=await r.json();
+}
+function decodeGrid(d,n,hmin){ const a=new Float32Array(n*n); let v=0; for(let k=0;k<n*n;k++){ v+=d[k]; a[k]=hmin+v/10; } return a; }
+function coarseAt(x,z){
+  const s=CH.step, n=CH.n, fx=Math.min(n-1.001,Math.max(0,(x+CH.half)/s)), fz=Math.min(n-1.001,Math.max(0,(z+CH.half)/s));
+  const i=Math.floor(fx), j=Math.floor(fz), u=fx-i, v=fz-j, h=CH.h;
+  return lerp(lerp(h[j*n+i],h[j*n+i+1],u),lerp(h[(j+1)*n+i],h[(j+1)*n+i+1],u),v);
+}
+function pip(x,z,r){ let c=false; for(let i=0,j=r.length-2;i<r.length;j=i,i+=2){ const xi=r[i],zi=r[i+1],xj=r[j],zj=r[j+1]; if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/(zj-zi)+xi)) c=!c; } return c; }
+function inRings(x,z,rs){ if(!pip(x,z,rs[0])) return false; for(let k=1;k<rs.length;k++) if(pip(x,z,rs[k])) return false; return true; }
+function ringsBox(rs){ const r=rs[0]; let a=1e9,b=1e9,c=-1e9,d=-1e9; for(let i=0;i<r.length;i+=2){a=Math.min(a,r[i]);c=Math.max(c,r[i]);b=Math.min(b,r[i+1]);d=Math.max(d,r[i+1]);} return [a,b,c,d]; }
+function rasterRings(rs,fn){
+  const [a,b,c,d]=ringsBox(rs), gi=v=>(v/SIZE+.5)*(N-1);
+  const i0=Math.max(0,Math.floor(gi(a))), i1=Math.min(N-1,Math.ceil(gi(c))), j0=Math.max(0,Math.floor(gi(b))), j1=Math.min(N-1,Math.ceil(gi(d)));
+  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++) if(inRings(gx2w(i),gx2w(j),rs)) fn(j*N+i);
+}
+const toPts=f=>{const o=[]; for(let i=0;i<f.length;i+=2) o.push([f[i],f[i+1]]); return o;};
+function gridSq(E,Nn){ const e=Math.floor(E/100000), n=Math.floor(Nn/100000); let l1=(19-n)-(19-n)%5+Math.floor((e+10)/5), l2=(19-n)*5%25+e%5; if(l1>7)l1++; if(l2>7)l2++; return String.fromCharCode(65+l1,65+l2); }
+function genReal(D,rand){
+  REAL=D; N=D.n; SIZE=2*D.half; HALF=D.half; CS=SIZE/(N-1);
+  seaSide=-1; BASE=0; gNoise=gNoise||makeNoise(mulberry32(7));
+  H=decodeGrid(D.h,N,D.hmin);
+  // keep the original grid (lakes flattened) for the map contours and the ambient occlusion: same map as before, and quicker
+  H0=H.slice(); N0=N; for(const lk of D.lakes) rasterRings(lk.r,k=>{ H0[k]=Math.min(H0[k],lk.l-1.2); });
+  { // Catmull-Rom 2x upsample: smoother slopes and room for fine detail (7.5 m -> 3.75 m cells)
+    const n2=2*N-1, U=new Float32Array(n2*n2), cr=(a,b,c,d)=>(-a+9*b+9*c-d)/16, cl=q=>Math.max(0,Math.min(N-1,q));
+    for(let j=0;j<N;j++){ const r=2*j*n2; for(let i=0;i<N;i++) U[r+2*i]=H[j*N+i];
+      for(let i=0;i<N-1;i++) U[r+2*i+1]=cr(H[j*N+cl(i-1)],H[j*N+i],H[j*N+i+1],H[j*N+cl(i+2)]); }
+    for(let j=0;j<N-1;j++) for(let i=0;i<n2;i++){ const g=q=>U[2*cl(q)*n2+i]; U[(2*j+1)*n2+i]=cr(g(j-1),g(j),g(j+1),g(j+2)); }
+    H=U; N=n2; CS=SIZE/(N-1);
+  }
+  C=new Float32Array(N*N); M=new Uint8Array(N*N);
+  const cn=D.c.n; CH={half:D.c.half,n:cn,step:2*D.c.half/(cn-1),h:decodeGrid(D.c.h,cn,D.c.hmin),m:new Uint8Array(cn*cn)};
+  { let k=0; const m=D.c.m; for(let q=0;q<m.length;q+=2){ CH.m.fill(m[q],k,k+m[q+1]); k+=m[q+1]; } }   // 1 lake/sea, 2 conifer, 3 broadleaf wood
+  // lakes: each one flat at its own surface level, with the bed dropped just below it
+  lakes=D.lakes;
+  for(const lk of lakes) rasterRings(lk.r,k=>{ M[k]|=16; H[k]=Math.min(H[k],lk.l-1.2); });
+  // rough ground from OSM scree and bare rock
+  rockP=D.rock; for(const r of rockP) rasterRings(r,k=>{ M[k]|=64; });
+  rivers=D.streams.map(s=>{const p=toPts(s.p); p.w=s.w; return p;});
+  roads=D.roads.map(toPts); footpaths=D.paths.map(toPts); rails=D.rails.map(toPts); cliffs=D.cliffs.map(toPts);
+  for(const r of rivers) markMask(r,1,r.w>3?7:3);
+  for(const r of roads) markMask(r,2,5);
+  for(const r of rails) markMask(r,2,3);
+  for(const f of footpaths) markMask(dens(f,6),128,3);
+  walls=[]; for(const w of D.walls) for(let i=0;i+3<w.length;i+=2) walls.push([w[i],w[i+1],w[i+2],w[i+3]]);
+  buildings=D.buildings.map(b=>({x:b[0],z:b[1],w:Math.max(3,b[2]),d:Math.max(3,b[3]),th:b[4],h:b[5],t:b[2]>14?'barn':'house'}));
+  for(const b of buildings) markMask([[b.x,b.z]],8,Math.max(b.w,b.d)/2+3);
+  power=null; farm=null; crags=[];
+  trig=D.trigs.length?{x:D.trigs[0][0],z:D.trigs[0][1]}:null;
+  places=D.places;
+  // woods: trees filling the real OSM wood outlines
+  woodP=D.woods; trees=[];
+  const MAXT=6000;
+  for(const wd of woodP){
+    const [a,b,c,d]=ringsBox(wd.r), sp=wd.t==='c'?8.5:10;
+    for(let x=Math.max(a,-HALF+6);x<=Math.min(c,HALF-6);x+=sp) for(let z=Math.max(b,-HALF+6);z<=Math.min(d,HALF-6);z+=sp){
+      if(trees.length>=MAXT) break;
+      const px=x+(rand()-.5)*sp*0.7, pz=z+(rand()-.5)*sp*0.7;
+      if(rand()<0.07||!inRings(px,pz,wd.r)||(maskAt(px,pz)&(1|2|8|16))) continue;
+      const h=wd.t==='c'?11+rand()*5:6+rand()*7; trees.push({x:px,z:pz,h,r:h*(wd.t==='c'?0.28:0.36),t:wd.t,lone:false});
+    }
+  }
+  for(const t of trees){const k=cellOf(t.x,t.z); if(k<0) continue; const i=k%N,j=(k/N)|0;
+    for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const a=i+di,b=j+dj;if(a>=0&&b>=0&&a<N&&b<N)C[b*N+a]=Math.max(C[b*N+a],t.h*(di||dj?0.7:1));}}
+  // boulders scattered over the scree
+  boulders=[];
+  for(const r of rockP){ const [a,b,c,d]=ringsBox(r); const n=Math.min(60,Math.round((c-a)*(d-b)/900));
+    for(let k=0;k<n&&boulders.length<500;k++){ const x=lerp(a,c,rand()), z=lerp(b,d,rand()); if(Math.abs(x)<HALF-5&&Math.abs(z)<HALF-5&&inRings(x,z,r)&&!(maskAt(x,z)&(1|2|16))) boulders.push({x,z,s:0.7+rand()*1.6,rot:rand()*6.28}); } }
+  markMask(boulders.map(b=>[b.x,b.z]),4,3);
+  // slope of each cell, used to thin contours on crags
+  G=new Float32Array(N*N);
+  for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const k=j*N+i;
+    G[k]=Math.hypot(H[j*N+Math.min(N-1,i+1)]-H[j*N+Math.max(0,i-1)],H[Math.min(N-1,j+1)*N+i]-H[Math.max(0,j-1)*N+i])/(2*CS); }
+  let mn=1e9; maxH=-1e9; for(let k=0;k<N*N;k++){ if(M[k]&16) continue; if(H[k]>maxH) maxH=H[k]; if(H[k]<mn) mn=H[k]; }
+  REAL.minH=mn;
+  { const sv=[H,N,CS]; H=H0; N=N0; CS=SIZE/(N-1);
+    contours=[]; for(let v=Math.ceil(mn/CI)*CI; v<=maxH; v+=CI) contours.push({L:v,v,segs:segsAt(v)});
+    [H,N,CS]=sv;
+    const sf=(N-1)/(N0-1); for(const c of contours) for(let q=0;q<c.segs.length;q++) c.segs[q]*=sf; }   // grid units of the 2x grid, which the map uses
+  // micro-relief for the 3D view only (added after the contours, so the map stays clean):
+  // hummocky grass, broken ground on steep slopes and scree, nothing on water, roads or buildings
+  for(let j=1;j<N-1;j++) for(let i=1;i<N-1;i++){ const k=j*N+i; if(M[k]&(1|2|8|16)) continue;
+    const x=gx2w(i), z=gx2w(j), a=0.2+0.85*smooth(0.45,1.2,G[k])+((M[k]&64)?0.35:0);
+    H[k]+=a*(0.6*gNoise(x/7.3+11,z/7.3)+0.4*gNoise(x/3.3,z/3.3+23)); }
+  shore=[];
+  spots=D.peaks.map(p=>({x:p.x,z:p.z,v:p.e,n:p.n}));
+  hasCrag=false;
+  for(let k=0;k<N*N;k++) if(G[k]>1.05&&!(M[k]&16)){hasCrag=true;break;}
+  // where a walker would stand: along the paths and tracks
+  pathPts=[]; const lim=0.36*SIZE;
+  for(const f of footpaths) for(let k=1;k<f.length;k++){ const a=f[k-1], b=f[k], L=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    for(let t=0;t<L;t+=12){ const x=lerp(a[0],b[0],t/L), z=lerp(a[1],b[1],t/L); if(Math.abs(x)<lim&&Math.abs(z)<lim) pathPts.push([x,z]); } }
+  feats=[];
+  trees.forEach((t,k)=>{if(k%5===0) feats.push([t.x,t.z,hAt(t.x,t.z)+t.h]);});
+  for(let j=2;j<N;j+=4)for(let i=2;i<N;i+=4){ const k=j*N+i; if(M[k]&16){ const lk=lakes.find(l=>inRings(gx2w(i),gx2w(j),l.r)); feats.push([gx2w(i),gx2w(j),(lk?lk.l:H[k])+0.3]); } }
+  buildings.forEach(b=>feats.push([b.x,b.z,hAt(b.x,b.z)+b.h+2]));
+  if(trig) feats.push([trig.x,trig.z,hAt(trig.x,trig.z)+1.4]);
+}
+const PAST=[0.29,0.41,0.16], ROUGH=[0.44,0.44,0.24], MOOR=[0.45,0.38,0.26], HIGHG=[0.49,0.48,0.36], SCREE=[0.47,0.47,0.455], CRAG=[0.37,0.365,0.355];
+function groundColourReal(x,z,h,grade,wet,cm){
+  if(wet) return [0.25,0.36,0.44];
+  if(cm===2||cm===3){ const f=1+0.1*cNoise(x/60,z/60); return cm===2?[0.13*f,0.22*f,0.13*f]:[0.2*f,0.29*f,0.14*f]; }
+  const t=smooth(110,650,h); let c=mix(PAST,ROUGH,t);
+  const f=cNoise(x/90,z/90);
+  c=mix(c,MOOR,smooth(0.2,0.8,t)*smooth(-0.2,0.4,cNoise(x/140+30,z/140))*0.8);
+  c=mix(c,HIGHG,smooth(650,950,h)*0.7);
+  c=mix(c,BOG,Math.max(0,-f)*0.25*(1-t));
+  if(Math.abs(x)<=HALF&&Math.abs(z)<=HALF&&(maskAt(x,z)&64)) c=mix(c,SCREE,0.8);
+  c=mix(c,CRAG,smooth(0.6,1.15,grade));
+  const sh=(1+0.11*cNoise(x/22+5,z/22+9))*(1+0.06*cNoise(x/9,z/9+50))*1.1;
+  return [c[0]*sh,c[1]*sh,c[2]*sh];
+}
+
+// ---------- 3D ----------
+let renderer, scene, camera, round=null, sun, hemi, fog;
+const LOW=[0.24,0.34,0.14], HIGH=[0.52,0.50,0.26], SAND=[0.62,0.57,0.40], BED=[0.30,0.30,0.24];
+const HAY=[0.50,0.50,0.22], HEATH=[0.40,0.30,0.27], ROCK=[0.50,0.49,0.45], BOG=[0.20,0.27,0.13];
+const mix=(a,b,t)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
+let grassTex=null, stoneTex=null, cNoise=null, rockTex=null, matNear=null, matFar=null, matWater=null;
+const waterSky={value:null};
+function makeRockTex(){
+  const S=256, cv=document.createElement('canvas'); cv.width=cv.height=S; const x=cv.getContext('2d'), r=mulberry32(4711);
+  x.fillStyle='rgb(150,148,142)'; x.fillRect(0,0,S,S);
+  for(let k=0;k<220;k++){ const px=r()*S, py=r()*S, rad=6+r()*40, v=110+r()*110;
+    for(const ox of [-S,0,S]) for(const oy of [-S,0,S]){ const g=x.createRadialGradient(px+ox,py+oy,0,px+ox,py+oy,rad);
+      g.addColorStop(0,`rgba(${v},${v-2},${v-8},0.35)`); g.addColorStop(1,'rgba(128,128,128,0)'); x.fillStyle=g; x.fillRect(px+ox-rad,py+oy-rad,rad*2,rad*2); } }
+  x.lineCap='round';
+  for(let k=0;k<70;k++){ let px=r()*S, py=r()*S; x.strokeStyle=`rgba(40,38,36,${0.25+r()*0.35})`; x.lineWidth=0.6+r()*1.6; x.beginPath(); x.moveTo(px,py);
+    const ang=r()*6.28; for(let s=0;s<6;s++){ px+=Math.cos(ang+(r()-.5)*1.2)*(6+r()*14); py+=Math.sin(ang+(r()-.5)*1.2)*(6+r()*14); x.lineTo(px,py); } x.stroke(); }
+  for(let k=0;k<900;k++){ const v=r()<0.5?60+r()*50:190+r()*60; x.fillStyle=`rgba(${v},${v},${v-6},0.5)`; x.fillRect(r()*S,r()*S,1+r()*2,1+r()*2); }
+  for(let k=0;k<160;k++){ x.fillStyle=r()<0.6?'rgba(175,185,120,0.45)':'rgba(215,210,180,0.5)'; x.beginPath(); x.arc(r()*S,r()*S,1+r()*3.5,0,6.28); x.fill(); }
+  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=renderer.capabilities.getMaxAnisotropy(); return t;
+}
+// Ground material: lit per pixel, grass texture at two scales to hide tiling, and bare rock
+// (sampled from three sides so cliffs don't smear) wherever the ground is steep.
+function makeGroundMat(far){
+  const m=new THREE.MeshPhongMaterial({vertexColors:true,map:grassTex,shininess:6,specular:0x111111});
+  m.extensions={derivatives:true}; m.defines={GFAR:far?1:0}; m.userData.keep=true;
+  m.onBeforeCompile=sh=>{
+    sh.uniforms.rockMap={value:rockTex};
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP; varying vec3 vWN; attribute float shade; varying float vSh;')
+      .replace('#include <project_vertex>','#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz; vWN=normalize(mat3(modelMatrix)*objectNormal); vSh=shade;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP; varying vec3 vWN; uniform sampler2D rockMap; varying float vSh;')
+      .replace('#include <lights_fragment_end>','#include <lights_fragment_end>\nreflectedLight.directDiffuse*=vSh; reflectedLight.directSpecular*=vSh;')
+      .replace('#include <map_fragment>',`
+        vec3 gA=texture2D(map,vUv).rgb, gB=texture2D(map,vUv*0.173+0.31).rgb;
+        diffuseColor.rgb*=mix(gA,gB,0.5)*1.03;`)
+      .replace('#include <color_fragment>',`#include <color_fragment>
+        vec3 fN=normalize(cross(dFdx(vWP),dFdy(vWP))); if(fN.y<0.0) fN=-fN;
+        vec3 nN=normalize(mix(normalize(vWN),fN,0.55));
+        vec3 bw=pow(abs(nN),vec3(4.0)); bw/=(bw.x+bw.y+bw.z);
+        float sc=GFAR==1?0.018:0.09;
+        vec3 rk=texture2D(rockMap,vWP.zy*sc).rgb*bw.x+texture2D(rockMap,vWP.xz*sc).rgb*bw.y+texture2D(rockMap,vWP.xy*sc).rgb*bw.z;
+        float s2=sc*3.7; vec3 rk2=texture2D(rockMap,vWP.zy*s2+0.5).rgb*bw.x+texture2D(rockMap,vWP.xz*s2+0.5).rgb*bw.y+texture2D(rockMap,vWP.xy*s2+0.5).rgb*bw.z;
+        rk=pow(rk*rk2*1.85,vec3(1.25));
+        float brk=texture2D(map,vWP.xz*0.0047).r-0.85;
+        float steep=smoothstep(GFAR==1?0.28:0.24,GFAR==1?0.5:0.44,1.0-nN.y+brk*0.5);
+        diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.40,0.395,0.38)*rk,steep*0.85);`);
+  };
+  return m;
+}
+function makeWaterMat(){
+  const m=new THREE.MeshPhongMaterial({color:0x2c4d61,specular:0x8aa4b8,shininess:90,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
+  m.userData.keep=true;
+  m.onBeforeCompile=sh=>{ sh.uniforms.uSky=waterSky;
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 uSky;')
+      .replace('#include <fog_fragment>',`float fres=pow(1.0-clamp(abs(dot(normalize(vViewPosition),normal)),0.0,1.0),3.0);
+        gl_FragColor.rgb=mix(gl_FragColor.rgb,uSky,0.12+0.78*fres);
+        #include <fog_fragment>`); };
+  return m;
+}
+// Ambient occlusion from the height grid: how much of the sky each point can see.
+// Gullies and hollows darken, ridges and crests stay bright.
+const AOC={};   // ambient occlusion per place, worked out once
+function fineAO(){   // AO worked out on the original grid, then stretched over the 2x mesh
+  const a=AOC['f'+REAL.id]||(AOC['f'+REAL.id]=aoGrid(H0,N0,SIZE/(N0-1),160)), out=new Float32Array(N*N);
+  for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const i0=i>>1, j0=j>>1, i1=Math.min(N0-1,i0+(i&1)), j1=Math.min(N0-1,j0+(j&1));
+    out[j*N+i]=(a[j0*N0+i0]+a[j0*N0+i1]+a[j1*N0+i0]+a[j1*N0+i1])/4; }
+  return out;
+}
+// Cast shadows: from each point, walk towards the sun and see whether the ground rises above the ray.
+// Soft edges come from how close the ray passes. Only the sun's direct light is dimmed, not the sky light.
+function sunSetup(){
+  const w=S.wx; if(!w||w.sun<0.6) return null;   // overcast, low cloud and mist: no hard shadows
+  let top=-1e9; if(REAL){ for(let k=0;k<CH.h.length;k++) if(CH.h[k]>top) top=CH.h[k]; for(let k=0;k<H.length;k++) if(H[k]>top) top=H[k]; } else top=LAND+maxH+bdAmp;
+  return {dx:Math.sin(S.saz), dz:-Math.cos(S.saz), t:w.sunE/1000, top:top+2, lim:REAL?CH.half*1.4:6000};
+}
+function sunShade(sd,x,z,h0){
+  if(!sd) return 1;
+  let m=1e9;
+  for(let t=3;t<sd.lim;t*=1.13){
+    const ry=h0+1.2+t*sd.t; if(ry>sd.top) break;
+    const px=x+sd.dx*t, pz=z+sd.dz*t;
+    if(REAL&&(Math.abs(px)>CH.half||Math.abs(pz)>CH.half)) break;
+    const c=(ry-hAt(px,pz))/(t*0.03+1.5); if(c<m){ m=c; if(m<-1) return 0; }
+  }
+  return Math.max(0,Math.min(1,0.5+0.5*m));
+}
+// ---------- orienteering ----------
+// Twenty fixed courses on real places. Position shown on the first five, hidden after.
+const OLV=[
+ {place:'padarn',n:4,show:true,wx:'clear',leg:[140,300],jump:150,types:'pj su le'},
+ {place:'gwynant',n:4,show:true,wx:'clear',leg:[140,320],jump:150,types:'pj su le'},
+ {place:'crafnant',n:4,show:true,wx:'clear',leg:[150,320],jump:150,types:'pj su le'},
+ {place:'ogwen',n:5,show:true,wx:'evening',leg:[150,340],jump:150,types:'pj su le'},
+ {place:'dinas',n:5,show:true,wx:'clear',leg:[150,340],jump:150,types:'pj su le sj'},
+ {place:'llydaw',n:4,show:false,wx:'clear',leg:[160,340],jump:150,types:'pj su le'},
+ {place:'rhydddu',n:5,show:false,wx:'clear',leg:[160,340],jump:150,types:'pj su le sj'},
+ {place:'cowlyd',n:5,show:false,wx:'evening',leg:[170,360],jump:150,types:'pj su le sj'},
+ {place:'idwal',n:5,show:false,wx:'clear',leg:[170,360],jump:150,types:'pj su le sj'},
+ {place:'llagi',n:5,show:false,wx:'haze',leg:[170,360],jump:150,types:'pj su le sj'},
+ {place:'stwlan',n:5,show:false,wx:'overcast',leg:[180,380],jump:150,types:'pj su le sj cf'},
+ {place:'cwmbychan',n:6,show:false,wx:'haze',leg:[160,340],jump:150,types:'pj su le sj cf'},
+ {place:'glyderfawr',n:5,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su le sj cf'},
+ {place:'moelhebog',n:5,show:false,wx:'haze',leg:[200,400],jump:150,types:'pj su le sj cf'},
+ {place:'cwmsilyn',n:6,show:false,wx:'overcast',leg:[180,380],jump:150,types:'pj su le sj cf'},
+ {place:'cau',n:6,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su le sj cf'},
+ {place:'dafydd',n:6,show:false,wx:'haze',leg:[200,400],jump:150,types:'pj su le sj cf'},
+ {place:'arenig',n:6,show:false,wx:'overcast',leg:[200,420],jump:150,types:'pj su le sj cf'},
+ {place:'rhinogfawr',n:6,show:false,wx:'lowcloud',leg:[180,380],jump:150,types:'pj su le sj cf'},
+ {place:'carneddau',n:6,show:false,wx:'mist',leg:[150,320],jump:150,types:'pj su le sj cf'},
+];
+let olv=load('way-orient',{cur:1,open:1,best:{},stars:{}}), OL=null, LH0=null, kiteTex=null;
+const fmtT=s=>{ s=Math.round(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+function segDist(px,pz,ax,az,bx,bz){ const dx=bx-ax, dz=bz-az, L2=dx*dx+dz*dz||1, t=Math.max(0,Math.min(1,((px-ax)*dx+(pz-az)*dz)/L2)); return Math.hypot(px-ax-dx*t,pz-az-dz*t); }
+// time to cross the ground in a straight line: hill-walking pace from the slope, quicker on paths, slower on rock
+function legCost(x0,z0,x1,z1){
+  // heights averaged over a few metres so the fine hummocks don't count as climbing
+  const hs=(x,z)=>(hAt(x,z)*2+hAt(x+4,z)+hAt(x-4,z)+hAt(x,z+4)+hAt(x,z-4))/6;
+  const d=Math.hypot(x1-x0,z1-z0), n=Math.max(1,Math.ceil(d/10)), ds=d/n; let t=0, block=null, hp=hs(x0,z0);
+  for(let q=1;q<=n;q++){ const x=lerp(x0,x1,q/n), z=lerp(z0,z1,q/n), h=hs(x,z), sl=(h-hp)/ds, m=maskAt(x,z)|maskAt(lerp(x0,x1,(q-0.5)/n),lerp(z0,z1,(q-0.5)/n));
+    if(m&16) block=block||'oWater'; else if(m&8) block=block||'oBlock'; else if(Math.abs(sl)>1.2) block=block||'oSteep';
+    const v=6*Math.exp(-3.5*Math.abs(sl+0.05))/3.6*((m&(128|2))?1:(m&64)?0.5:0.72);
+    t+=Math.hypot(ds,h-hp)/Math.max(0.12,v); hp=h; }
+  return {t,block,d};
+}
+// control sites that can be found from the map: path junctions, summits, lake ends, stream junctions, crag feet
+function orientFeatures(){
+  const out=[], lim=HALF-110, ok=(x,z)=>Math.abs(x)<lim&&Math.abs(z)<lim&&!(maskAt(x,z)&(16|8))&&hAt(x,z)>1;
+  const add=(x,z,t)=>{ if(ok(x,z)&&!out.some(o=>Math.hypot(o[0]-x,o[1]-z)<25)) out.push([x,z,t]); };
+  const key=(x,z)=>Math.round(x/3)+','+Math.round(z/3), V=new Map();
+  footpaths.concat(roads).forEach((f,fi)=>f.forEach(p=>{ const k=key(p[0],p[1]); const e=V.get(k)||{p,s:new Set()}; e.s.add(fi); V.set(k,e); }));
+  for(const e of V.values()) if(e.s.size>=2) add(e.p[0],e.p[1],'pj');
+  for(const p of spots) add(p.x,p.z,'su');
+  for(const lk of lakes){ const r=lk.r[0]; if(r.length<8) continue; let cx=0,cz=0; for(let i=0;i<r.length;i+=2){cx+=r[i];cz+=r[i+1];} cx/=r.length/2; cz/=r.length/2;
+    let a=0,bd=-1; for(let i=0;i<r.length;i+=2){ const d=Math.hypot(r[i]-cx,r[i+1]-cz); if(d>bd){bd=d;a=i;} } if(bd<60) continue;
+    let b=0; bd=-1; for(let i=0;i<r.length;i+=2){ const d=Math.hypot(r[i]-r[a],r[i+1]-r[a+1]); if(d>bd){bd=d;b=i;} }
+    for(const i of [a,b]){ const dx=r[i]-cx, dz=r[i+1]-cz, L=Math.hypot(dx,dz)||1; add(r[i]+dx/L*8,r[i+1]+dz/L*8,'le'); } }
+  const SV=new Map(); rivers.forEach((f,fi)=>f.forEach(p=>{ const k=key(p[0],p[1]); if(!SV.has(k)) SV.set(k,new Set()); SV.get(k).add(fi); }));
+  rivers.forEach((f,fi)=>{ for(const p of [f[0],f[f.length-1]]){ const i=Math.round(p[0]/3), j=Math.round(p[1]/3); let hit=false;
+    for(let a=-1;a<=1&&!hit;a++) for(let b=-1;b<=1;b++){ const e=SV.get((i+a)+','+(j+b)); if(e&&[...e].some(o=>o!==fi)){ hit=true; break; } }
+    if(hit){ const q=[p[0]+5,p[1]+5]; add(q[0],q[1],'sj'); } } });
+  for(const c of cliffs){ const m=c[Math.floor(c.length/2)]; const e=5, gx=hAt(m[0]+e,m[1])-hAt(m[0]-e,m[1]), gz=hAt(m[0],m[1]+e)-hAt(m[0],m[1]-e), g=Math.hypot(gx,gz)||1;
+    const x=m[0]-gx/g*12, z=m[1]-gz/g*12; if(slopeAt(x,z)<0.9) add(x,z,'cf'); }
+  // extra sites, used when a place is short of the usual ones: sharp path bends and small knolls
+  for(const fp of footpaths) for(let k=1;k<fp.length-1;k++){ const a=fp[k-1],b=fp[k],c=fp[k+1], a1=Math.atan2(b[1]-a[1],b[0]-a[0]), a2=Math.atan2(c[1]-b[1],c[0]-b[0]);
+    let da=Math.abs(a2-a1); if(da>Math.PI) da=2*Math.PI-da; if(da>0.9&&Math.hypot(b[0]-a[0],b[1]-a[1])>8&&Math.hypot(c[0]-b[0],c[1]-b[1])>8) add(b[0],b[1],'pb'); }
+  for(let z=-lim;z<=lim;z+=30) for(let x=-lim;x<=lim;x+=30){ const h=hAt(x,z); let top=true, lo=1e9;
+    for(let a=0;a<8&&top;a++){ const r=40, hh=hAt(x+Math.cos(a*0.785)*r,z+Math.sin(a*0.785)*r); if(hh>=h) top=false; lo=Math.min(lo,hh); }
+    if(top&&h-lo>4) add(x,z,'kn'); }
+  return out;
+}
+const oShow=L=>settings.opos==='on'?true:settings.opos==='off'?false:L.show;
+function orientCourse(rand,relax){
+  const L=OL, types=relax?'pj su le sj cf pb kn':L.types, leg=relax?[L.leg[0]*0.5,L.leg[1]*1.5]:L.leg, gap=relax?60:95;
+  const F=orientFeatures().filter(f=>types.includes(f[2]));
+  if(F.length<L.n) return null;
+  for(let at=0;at<80;at++){
+    const st=pathPts.length&&rand()<0.8?pathPts[Math.floor(rand()*pathPts.length)]:[(rand()-.5)*1100,(rand()-.5)*1100];
+    if(!standable(st[0],st[1])||maskAt(st[0],st[1])&16) continue;
+    const seq=[]; let cur=st; const used=[st];
+    for(let k=0;k<L.n;k++){
+      const cand=F.filter(f=>{ const d=Math.hypot(f[0]-cur[0],f[1]-cur[1]); return d>=leg[0]&&d<=leg[1]&&used.every(u=>Math.hypot(f[0]-u[0],f[1]-u[1])>gap); });
+      if(!cand.length) break; const f=cand[Math.floor(rand()*cand.length)]; seq.push(f); used.push(f); cur=f; }
+    if(seq.length<L.n) continue;
+    let par=0, p=st; for(const c of seq){ const lc=legCost(p[0],p[1],c[0],c[1]); par+=lc.t+5*Math.ceil(lc.d/L.jump); p=c; }
+    S.oc={start:st,ctrls:seq,show:oShow(L),maxJump:L.jump,punch:8,par:par*1.3};
+    return [{x:st[0],z:st[1]}];
+  }
+  return null;
+}
+function otoast(t){ const el=$('#otoast'); el.textContent=t; el.style.display='block'; clearTimeout(otoast.t); otoast.t=setTimeout(()=>{ el.style.display='none'; },1800); }
+function kiteVis(){ if(!S.kites||!S.viewPos) return; const r=S.oc.show?130:85;
+  S.kites.forEach((k,i)=>{ const c=S.oc.ctrls[i]; k.visible=i>=S.ci&&Math.hypot(c[0]-S.viewPos.x,c[1]-S.viewPos.z)<r; }); render(); }
+function orientTap(cx,cy){
+  if(S.play!=='orient'||S.phase!=='course'||S.gliding||!renderer) return;
+  const r=renderer.domElement.getBoundingClientRect(); camera.updateMatrixWorld();
+  const v=new THREE.Vector3(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1,0.5).unproject(camera).sub(camera.position).normalize(), o=camera.position;
+  let hit=null; for(let t=2;t<1500;t+=t<80?1:t<400?2.5:6){ const x=o.x+v.x*t, y=o.y+v.y*t, z=o.z+v.z*t; if(y<hAt(x,z)){ hit=[x,z]; break; } }
+  if(!hit) return otoast(tx('oSky'));
+  const x0=S.viewPos.x, z0=S.viewPos.z, d=Math.hypot(hit[0]-x0,hit[1]-z0);
+  if(Math.abs(hit[0])>HALF-6||Math.abs(hit[1])>HALF-6) return otoast(tx('oEdge'));
+  if(d<3) return;
+  if(d>S.oc.maxJump) return otoast(tx('oFar',{m:S.oc.maxJump}));
+  const c=legCost(x0,z0,hit[0],hit[1]); if(c.block) return otoast(tx(c.block));
+  S.yaw=brg(x0,z0,hit[0],hit[1]);
+  const t0=performance.now(), dur=Math.min(750,250+d*2.2); S.gliding=true;
+  const step=now=>{ const u=Math.min(1,(now-t0)/dur), e=u<.5?2*u*u:1-2*(1-u)*(1-u); S.viewPos={x:lerp(x0,hit[0],e),z:lerp(z0,hit[1],e)}; placeCamera();
+    if(u<1) return requestAnimationFrame(step);
+    S.gliding=false; S.otime+=c.t+5; S.route.push(hit);
+    while(S.ci<S.oc.ctrls.length){ const k=S.oc.ctrls[S.ci]; if(segDist(k[0],k[1],x0,z0,hit[0],hit[1])>S.oc.punch) break;
+      S.splits.push(S.otime-S.lastPunch); S.lastPunch=S.otime; S.ci++;
+      if(S.ci>=S.oc.ctrls.length){ orientFinish(); return; } otoast(tx('oPunch',{n:S.ci})); }
+    kiteVis(); drawMap(); updateChoices(); };
+  requestAnimationFrame(step);
+}
+function orientFinish(){
+  S.phase='done'; const n=olv.cur, t=S.otime, par=S.oc.par, st=t<=par?3:t<=par*1.4?2:1;
+  olv.best[n]=Math.min(olv.best[n]||1e9,t); olv.stars[n]=Math.max(olv.stars[n]||0,st); olv.open=Math.max(olv.open,Math.min(OLV.length,n+1)); store('way-orient',olv);
+  S.oAdvance=true; kiteVis(); drawMap(); updateChoices(); updateTop(); updateStats();
+  let h=`<b>${tx('oDone')} ${fmtT(t)}</b><table class="splits">`;
+  S.splits.forEach((v,k)=>{ const c=S.oc.ctrls[k]; h+=`<tr><td>${k===S.oc.ctrls.length-1?tx('oFinish'):k+1}</td><td>${tx('f_'+c[2])}</td><td>${fmtT(v)}</td></tr>`; });
+  $('#status').innerHTML=h+'</table>';
+  showPop('good','✓',tx('oDone'),'★'.repeat(st)+'☆'.repeat(3-st),tx('oTime',{t:fmtT(t),p:fmtT(par)}),
+    [[$('#next').textContent,()=>$('#next').click(),true],[tx('oTry'),()=>{ S.oAdvance=false; newRound(); }],[tx('oRoute'),null]]);
+}
+function aoGrid(h,n,cs,maxD){
+  const out=new Float32Array(n*n), R=[[1,0],[-1,0],[0,1],[0,-1],[.707,.707],[.707,-.707],[-.707,.707],[-.707,-.707]], ds=[];
+  for(let d=cs;d<=maxD;d*=1.7) ds.push(d);
+  for(let j=0;j<n;j++) for(let i=0;i<n;i++){ const k=j*n+i, h0=h[k]; let occ=0;
+    for(const [dx,dz] of R){ let mt=0; for(const d of ds){ const a=Math.round(i+dx*d/cs), b=Math.round(j+dz*d/cs); if(a<0||b<0||a>=n||b>=n) break; const t=(h[b*n+a]-h0)/d; if(t>mt) mt=t; } occ+=mt/Math.sqrt(1+mt*mt); }
+    out[k]=Math.min(1.05,Math.max(0.62,1.05-0.85*occ/8)); }
+  return out;
+}
+function groundColour(x,z,h,grade){
+  if(REAL) return groundColourReal(x,z,h,grade,false);
+  const t=Math.pow(Math.min(1,Math.max(0,(h-LAND)/Math.max(60,maxH-LAND))),0.8);
+  let c=mix(LOW,HIGH,t);
+  const f=cNoise(x/75,z/75);
+  c=mix(c,HAY,Math.max(0,f)*0.45*(1-t));
+  c=mix(c,BOG,Math.max(0,-f)*0.35*(1-t));
+  const hw=smooth(0.3,0.65,t)*smooth(-0.15,0.35,cNoise(x/120+30,z/120));
+  c=mix(c,HEATH,hw*0.75);
+  c=mix(c,ROCK,smooth(0.45,0.95,grade));
+  const sh=(1+0.11*cNoise(x/22+5,z/22+9))*(1+0.06*cNoise(x/9,z/9+50))*1.14;
+  if(h<0) c=BED; else if(h<2.2) c=mix(SAND,c,h/2.2);
+  return [c[0]*sh,c[1]*sh,c[2]*sh];
+}
+function makeGrassTex(){
+  const S=256, cv=document.createElement('canvas'); cv.width=cv.height=S; const x=cv.getContext('2d'), r=mulberry32(12345);
+  x.fillStyle='rgb(222,222,222)'; x.fillRect(0,0,S,S);
+  for(let k=0;k<70;k++){
+    const px=r()*S, py=r()*S, rad=10+r()*34, dark=r()<0.5;
+    for(const ox of [-S,0,S]) for(const oy of [-S,0,S]){
+      const g=x.createRadialGradient(px+ox,py+oy,0,px+ox,py+oy,rad);
+      g.addColorStop(0,dark?'rgba(120,120,120,0.22)':'rgba(255,255,255,0.28)'); g.addColorStop(1,'rgba(128,128,128,0)');
+      x.fillStyle=g; x.fillRect(px+ox-rad,py+oy-rad,rad*2,rad*2);
+    }
+  }
+  for(let k=0;k<14000;k++){ const v=150+Math.floor(r()*105); x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(Math.floor(r()*S),Math.floor(r()*S),1,1+Math.floor(r()*3)); }
+  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.anisotropy=renderer.capabilities.getMaxAnisotropy(); return t;
+}
+function makeStoneTex(){
+  const W=256,Hh=128, cv=document.createElement('canvas'); cv.width=W; cv.height=Hh; const x=cv.getContext('2d'), r=mulberry32(777);
+  x.fillStyle='rgb(58,56,52)'; x.fillRect(0,0,W,Hh);
+  let y=Hh;
+  while(y>0){
+    const rh=9+r()*9; let cx=-r()*30;
+    while(cx<W){
+      const w=14+r()*30, v=120+r()*85, t=r();
+      const cr=v+(t<0.3?8:0), cg=v+(t>0.7?6:0), cb=v-6-r()*10;
+      for(const ox of [0,-W,W]){
+        const sx=cx+ox+1.2, sy=y-rh+1.2, sw=w-2.4, sh=rh-2.4, rad=Math.min(4,sh/2);
+        x.fillStyle=`rgb(${cr|0},${cg|0},${cb|0})`; x.beginPath(); x.moveTo(sx+rad,sy); x.arcTo(sx+sw,sy,sx+sw,sy+sh,rad); x.arcTo(sx+sw,sy+sh,sx,sy+sh,rad); x.arcTo(sx,sy+sh,sx,sy,rad); x.arcTo(sx,sy,sx+sw,sy,rad); x.fill();
+        x.fillStyle='rgba(255,255,255,0.18)'; x.fillRect(sx+2,sy,sw-4,1.5);
+        x.fillStyle='rgba(0,0,0,0.22)'; x.fillRect(sx+2,sy+sh-1.5,sw-4,1.5);
+      }
+      cx+=w;
+    }
+    y-=rh;
+  }
+  for(let k=0;k<260;k++){ x.fillStyle=r()<0.5?'rgba(190,200,120,0.55)':'rgba(230,225,190,0.4)'; const px=r()*W, py=r()*Hh; x.beginPath(); x.arc(px,py,0.8+r()*1.8,0,Math.PI*2); x.fill(); }
+  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=renderer.capabilities.getMaxAnisotropy(); return t;
+}
+function scaleUV(geo,f){const uv=geo.attributes.uv; for(let k=0;k<uv.count;k++) uv.setXY(k,uv.getX(k)*f,uv.getY(k)*f);}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function initThree(){
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setClearColor(0x000000,0);
+  $('#view').prepend(renderer.domElement);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(45,1.6,0.5,14000);
+  hemi=new THREE.HemisphereLight(0xd6e2f0,0x4a4630,0.55); scene.add(hemi);
+  sun=new THREE.DirectionalLight(0xfff0d6,1.15); scene.add(sun);
+  const wg=new THREE.PlaneGeometry(16000,16000,1,1); wg.rotateX(-Math.PI/2);
+  waterSky.value=new THREE.Color(0xd5dee2);
+  fog=new THREE.Fog(0xcccccc,700,6500); scene.fog=fog;
+  grassTex=makeGrassTex(); stoneTex=makeStoneTex(); rockTex=makeRockTex(); cNoise=makeNoise(mulberry32(4242));
+  matNear=makeGroundMat(false); matFar=makeGroundMat(true); matWater=makeWaterMat();
+  scene.add(new THREE.Mesh(wg,matWater));
+}
+function dens(pts,step){ const o=[pts[0]]; for(let k=1;k<pts.length;k++){ const a=pts[k-1], b=pts[k], L=Math.hypot(b[0]-a[0],b[1]-a[1]), n=Math.max(1,Math.ceil(L/step)); for(let q=1;q<=n;q++) o.push([lerp(a[0],b[0],q/n),lerp(a[1],b[1],q/n)]); } return o; }
+function ribbon(pts,w,yfn,color){
+  const pos=[],idx=[];
+  for(let k=0;k<pts.length;k++){
+    const a=pts[Math.max(0,k-1)], b=pts[Math.min(pts.length-1,k+1)];
+    let tx=b[0]-a[0], tz=b[1]-a[1]; const l=Math.hypot(tx,tz)||1; tx/=l; tz/=l;
+    const nx=-tz*w/2, nz=tx*w/2, L=[pts[k][0]+nx,pts[k][1]+nz], R=[pts[k][0]-nx,pts[k][1]-nz];
+    pos.push(L[0],yfn(L,pts[k]),L[1], R[0],yfn(R,pts[k]),R[1]);
+    if(k>0){const q=2*(k-1); idx.push(q,q+2,q+1, q+1,q+2,q+3);}
+  }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals();
+  return new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+}
+function buildScene(rand){
+  if(round){ scene.remove(round); round.traverse(o=>{if(o.geometry)o.geometry.dispose(); if(o.material&&!o.material.userData.keep)o.material.dispose();}); }
+  round=new THREE.Group(); scene.add(round);
+  const geo=new THREE.PlaneGeometry(SIZE,SIZE,N-1,N-1); geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position, cols=new Float32Array(N*N*3), AO=REAL?fineAO():aoGrid(H,N,CS,160), SD=sunSetup(), shd=new Float32Array(N*N);
+  const st=REAL?2:1;   // on the 2x real grid, colour every other vertex and blend the ones between
+  for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+    const k=j*N+i, h=H[k]; pos.setY(k,h);
+    if(i%st||j%st) continue;
+    shd[k]=sunShade(SD,gx2w(i),gx2w(j),h);
+    const hx=H[j*N+Math.min(N-1,i+st)]-H[j*N+Math.max(0,i-st)], hz=H[Math.min(N-1,j+st)*N+i]-H[Math.max(0,j-st)*N+i];
+    const c=groundColour(gx2w(i),gx2w(j),h,Math.hypot(hx,hz)/(2*st*CS));
+    cols[k*3]=c[0]; cols[k*3+1]=c[1]; cols[k*3+2]=c[2];
+  }
+  if(st===2){ const avg=(k,a,b)=>{ for(let q=0;q<3;q++) cols[k*3+q]=(cols[a*3+q]+cols[b*3+q])/2; shd[k]=(shd[a]+shd[b])/2; };
+    for(let j=0;j<N;j+=2) for(let i=1;i<N;i+=2) avg(j*N+i,j*N+i-1,j*N+i+1);
+    for(let j=1;j<N;j+=2) for(let i=0;i<N;i++) avg(j*N+i,(j-1)*N+i,(j+1)*N+i); }
+  for(let k=0;k<N*N;k++){ const o=AO[k]; cols[k*3]*=o; cols[k*3+1]*=o; cols[k*3+2]*=o; }
+  geo.setAttribute('color',new THREE.BufferAttribute(cols,3)); geo.setAttribute('shade',new THREE.BufferAttribute(shd,1)); geo.computeVertexNormals(); scaleUV(geo,SIZE/26);
+  round.add(new THREE.Mesh(geo,matNear));
+  const BS=REAL?2*CH.half:13200, BN=REAL?CH.n-1:220, bg=new THREE.PlaneGeometry(BS,BS,BN,BN); bg.rotateX(-Math.PI/2);
+  const bsh=new Float32Array((BN+1)*(BN+1)).fill(1), bp=bg.attributes.position, bc=new Float32Array((BN+1)*(BN+1)*3), BAO=REAL?(AOC['c'+REAL.id]||(AOC['c'+REAL.id]=aoGrid(CH.h,CH.n,CH.step,1500))):null;
+  for(let k=0;k<bp.count;k++){
+    const x=bp.getX(k), z=bp.getZ(k);
+    const inner=Math.abs(x)<HALF-1&&Math.abs(z)<HALF-1, cm=REAL&&!inner?CH.m[k]:0, wet=cm===1;
+    const h=inner?-30:hAt(x,z)-(wet?1.5:0)+(cm===2?9:cm===3?6:0);   // woods stand up as a canopy on the skyline
+    bp.setY(k,h); if(REAL&&!inner&&!wet) bsh[k]=sunShade(SD,x,z,h);
+    const g=Math.hypot(hAt(x+30,z)-hAt(x-30,z),hAt(x,z+30)-hAt(x,z-30))/60;
+    const c=REAL?groundColourReal(x,z,h,g,wet,cm):groundColour(x,z,Math.min(h,LAND+maxH),g), o=BAO&&!wet?BAO[k]:1; bc[k*3]=c[0]*o; bc[k*3+1]=c[1]*o; bc[k*3+2]=c[2]*o;
+  }
+  bg.setAttribute('color',new THREE.BufferAttribute(bc,3)); bg.setAttribute('shade',new THREE.BufferAttribute(bsh,1)); bg.computeVertexNormals(); scaleUV(bg,BS/26);
+  round.add(new THREE.Mesh(bg,matFar));
+  // rivers, roads, footpaths
+  for(const r of rivers) round.add(ribbon(r,r.w||6,(p,c)=>Math.max(0.08,hAt(c[0],c[1])+(r.w&&r.w<4?0.25:0.45)),0x4c7fa3));
+  for(const r of rails) round.add(ribbon(r,2.6,(p)=>hAt(p[0],p[1])+0.25,0x4a463f));
+  if(REAL){
+    const wm=matWater;
+    for(const lk of lakes){
+      const sh=new THREE.Shape(), r=lk.r[0]; sh.moveTo(r[0],-r[1]); for(let i=2;i<r.length;i+=2) sh.lineTo(r[i],-r[i+1]);
+      for(let q=1;q<lk.r.length;q++){ const h=lk.r[q], p=new THREE.Path(); p.moveTo(h[0],-h[1]); for(let i=2;i<h.length;i+=2) p.lineTo(h[i],-h[i+1]); sh.holes.push(p); }
+      const lg=new THREE.ShapeGeometry(sh); lg.rotateX(-Math.PI/2);
+      const lm=new THREE.Mesh(lg,wm); lm.position.y=lk.l+0.05; round.add(lm);
+    }
+  }
+  for(const r of roads) round.add(ribbon(dens(r,4),5,(p)=>hAt(p[0],p[1])+0.3,0x5b5a56));
+  for(const f of footpaths) round.add(ribbon(dens(f,3),1.2,(p)=>hAt(p[0],p[1])+0.14,0x6a6150));
+  // field walls: dry-stone walls with a stone texture, a slight batter and an uneven top
+  if(walls.length){
+    const wp=[],wc=[],wu=[],wi=[]; let base=0; const wr=mulberry32(99);
+    for(const [x1,z1,x2,z2] of walls){
+      const len=Math.hypot(x2-x1,z2-z1), n=Math.max(1,Math.ceil(len/1.5)), px=-(z2-z1)/len*0.38, pz=(x2-x1)/len*0.38;
+      let topN=0;
+      for(let s=0;s<=n;s++){
+        const d=len*s/n, wob=(wr()-.5)*0.06, x=lerp(x1,x2,s/n)+px*wob*4, z=lerp(z1,z2,s/n)+pz*wob*4, y=hAt(x,z);
+        topN=topN*0.6+(wr()-.5)*0.25; const top=y+1.1+topN, v=0.5+wr()*0.14, u=d/3;
+        wp.push(x+px,y-0.5,z+pz, x+px*0.55,top,z+pz*0.55, x-px*0.55,top+0.02,z-pz*0.55, x-px,y-0.5,z-pz);
+        wu.push(u,0, u,1, u+0.07,1, u,0);
+        for(let c=0;c<4;c++) wc.push(v,v*0.99,v*0.95);
+        if(s>0){const q=base+4*(s-1), r=q+4; wi.push(q,r,q+1, q+1,r,r+1,  q+1,r+1,q+2, q+2,r+1,r+2,  q+2,r+2,q+3, q+3,r+2,r+3);}
+      }
+      base+=4*(n+1);
+    }
+    const wg=new THREE.BufferGeometry(); wg.setAttribute('position',new THREE.Float32BufferAttribute(wp,3)); wg.setAttribute('color',new THREE.Float32BufferAttribute(wc,3)); wg.setAttribute('uv',new THREE.Float32BufferAttribute(wu,2)); wg.setIndex(wi); wg.computeVertexNormals();
+    round.add(new THREE.Mesh(wg,new THREE.MeshLambertMaterial({vertexColors:true,map:stoneTex,side:THREE.DoubleSide})));
+  }
+  // farm buildings
+  const houseM=new THREE.MeshLambertMaterial({color:0xebe7dc}), barnM=new THREE.MeshLambertMaterial({color:0x7c8a80}), roofM=new THREE.MeshLambertMaterial({color:0x3b3f46,side:THREE.DoubleSide});
+  const damM=new THREE.MeshLambertMaterial({color:0x9b978d,map:stoneTex});
+  for(const b of buildings){
+    const c=Math.cos(b.th), s=Math.sin(b.th); let g0=1e9,g1=-1e9;
+    for(const [u,v] of [[-1,-1],[1,-1],[1,1],[-1,1]]){const y=hAt(b.x+c*u*b.w/2-s*v*b.d/2,b.z+s*u*b.w/2+c*v*b.d/2); g0=Math.min(g0,y); g1=Math.max(g1,y);}
+    if(REAL&&Math.max(b.w,b.d)>35&&Math.max(b.w,b.d)>3.5*Math.min(b.w,b.d)){
+      const top=g1+1.2, dg=new THREE.BoxGeometry(b.w,top-(g0-2),b.d); scaleUV(dg,Math.max(b.w,b.d)/3);
+      const dm=new THREE.Mesh(dg,damM); dm.position.set(b.x,(top+g0-2)/2,b.z); dm.rotation.y=-b.th; round.add(dm); continue; }
+    const bh=(g1-g0)+b.h+1, box=new THREE.Mesh(new THREE.BoxGeometry(b.w,bh,b.d),b.t==='house'?houseM:barnM);
+    box.position.set(b.x,g0-1+bh/2,b.z); box.rotation.y=-b.th; round.add(box);
+    const rh=b.t==='house'?2.8:2.2, W=b.w/2+0.4, Dd=b.d/2+0.4;
+    const rg=new THREE.BufferGeometry(); rg.setAttribute('position',new THREE.Float32BufferAttribute([-W,0,-Dd, W,0,-Dd, W,0,Dd, -W,0,Dd, -W,rh,0, W,rh,0],3));
+    rg.setIndex([0,1,5, 0,5,4, 3,4,5, 3,5,2, 0,4,3, 1,2,5]); rg.computeVertexNormals();
+    const roof=new THREE.Mesh(rg,roofM); roof.position.set(b.x,g0-1+bh,b.z); roof.rotation.y=-b.th; round.add(roof);
+  }
+  // trig pillar
+  if(trig){ const tp=new THREE.Mesh(new THREE.BoxGeometry(0.65,1.4,0.65),new THREE.MeshLambertMaterial({color:0xefede6})); tp.position.set(trig.x,hAt(trig.x,trig.z)+0.6,trig.z); round.add(tp); }
+  const m4=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new THREE.Vector3(), p=new THREE.Vector3(), e=new THREE.Euler();
+  // power line
+  if(power){
+    const P=power.poles, dl=[power.b[0]-power.a[0],power.b[1]-power.a[1]], ll=Math.hypot(dl[0],dl[1]), px=-dl[1]/ll, pz=dl[0]/ll;
+    const pole=new THREE.CylinderGeometry(0.13,0.18,10,6); pole.translate(0,5,0);
+    const pm=new THREE.InstancedMesh(pole,new THREE.MeshLambertMaterial({color:0x5a4632}),P.length);
+    const am=new THREE.InstancedMesh(new THREE.BoxGeometry(2.4,0.14,0.14),new THREE.MeshLambertMaterial({color:0x4a3a2a}),P.length);
+    e.set(0,-Math.atan2(pz,px),0); const qa=new THREE.Quaternion().setFromEuler(e);
+    P.forEach((pp,k)=>{const y=hAt(pp[0],pp[1]); p.set(pp[0],y-0.3,pp[1]); sc.set(1,1,1); m4.compose(p,q,sc); pm.setMatrixAt(k,m4); p.set(pp[0],y+9.3,pp[1]); m4.compose(p,qa,sc); am.setMatrixAt(k,m4);});
+    round.add(pm); round.add(am);
+    const lp=[];
+    for(let k=0;k<P.length-1;k++){const a=P[k],b=P[k+1],ya=hAt(a[0],a[1])+9.35,yb=hAt(b[0],b[1])+9.35;
+      for(const o of [-1,0,1]){ let prev=null; for(let s=0;s<=10;s++){const t=s/10, pt=[lerp(a[0],b[0],t)+px*o*1.05, lerp(ya,yb,t)-1.8*4*t*(1-t), lerp(a[1],b[1],t)+pz*o*1.05]; if(prev) lp.push(...prev,...pt); prev=pt;} }}
+    const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));
+    round.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x2b2b2b})));
+  }
+  // trees
+  const con=trees.filter(t=>t.t==='c'), dec=trees.filter(t=>t.t==='d');
+  if(con.length){
+    const cone=new THREE.ConeGeometry(1,1,7); cone.translate(0,0.5,0);
+    const im=new THREE.InstancedMesh(cone,new THREE.MeshLambertMaterial({color:0x1d3620}),con.length);
+    const tc=new THREE.Color();
+    con.forEach((t,k)=>{p.set(t.x,hAt(t.x,t.z)-0.6,t.z); sc.set(t.r,t.h,t.r); m4.compose(p,q,sc); im.setMatrixAt(k,m4); const v=(0.55+0.45*sunShade(SD,t.x,t.z,hAt(t.x,t.z)+t.h*0.5))*(0.8+0.4*((Math.sin(t.x*12.9898+t.z*78.233)*43758.5453)%1+1)%1); im.setColorAt(k,tc.setRGB(v,v*1.02,v*0.97));}); round.add(im);
+  }
+  if(dec.length){
+    const crown=new THREE.IcosahedronGeometry(1,1), trunk=new THREE.CylinderGeometry(0.22,0.32,1,5); trunk.translate(0,0.5,0);
+    const ic=new THREE.InstancedMesh(crown,new THREE.MeshLambertMaterial({color:0x40602a}),dec.length);
+    const it=new THREE.InstancedMesh(trunk,new THREE.MeshLambertMaterial({color:0x4a3b2a}),dec.length);
+    dec.forEach((t,k)=>{const y=hAt(t.x,t.z);
+      p.set(t.x,y+t.h*0.62,t.z); sc.set(t.r,t.h*0.4,t.r); m4.compose(p,q,sc); ic.setMatrixAt(k,m4); { const v=(0.55+0.45*sunShade(SD,t.x,t.z,y+t.h*0.6))*(0.78+0.44*((Math.sin(t.x*12.9898+t.z*78.233)*43758.5453)%1+1)%1), w2=((Math.sin(t.x*3.1+t.z*7.7)*9173.7)%1+1)%1; ic.setColorAt(k,new THREE.Color(v*(0.92+0.16*w2),v,v*(0.9+0.08*w2))); }
+      p.set(t.x,y-0.3,t.z); sc.set(1,t.h*0.55,1); m4.compose(p,q,sc); it.setMatrixAt(k,m4);});
+    round.add(ic); round.add(it);
+  }
+  if(boulders.length){
+    const im=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),new THREE.MeshLambertMaterial({color:0x8d8b84}),boulders.length);
+    const qb=new THREE.Quaternion();
+    boulders.forEach((b,k)=>{p.set(b.x,hAt(b.x,b.z)+b.s*0.3,b.z); e.set(0.3*Math.sin(b.rot*3),b.rot,0.2); qb.setFromEuler(e); sc.set(b.s,b.s*0.7,b.s*0.9); m4.compose(p,qb,sc); im.setMatrixAt(k,m4);});
+    round.add(im);
+  }
+  // orienteering kites: orange and white, on a short stake
+  if(S.oc){
+    if(!kiteTex){ const cv=document.createElement('canvas'); cv.width=cv.height=64; const x=cv.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,64,64); x.fillStyle='#f07a10'; x.beginPath(); x.moveTo(0,0); x.lineTo(64,0); x.lineTo(0,64); x.closePath(); x.fill(); kiteTex=new THREE.CanvasTexture(cv); }
+    const km=new THREE.MeshBasicMaterial({map:kiteTex}), pm=new THREE.MeshLambertMaterial({color:0x777067}); S.kites=[];
+    for(const c of S.oc.ctrls){ const g=new THREE.Group(), y=hAt(c[0],c[1]);
+      const k=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.7,0.7),km); k.position.y=1.15; k.rotation.y=0.6; g.add(k);
+      const p=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.2,5),pm); p.position.y=0.6; g.add(p);
+      g.position.set(c[0],y,c[1]); g.visible=false; round.add(g); S.kites.push(g); }
+  }
+  // low cloud
+  if(WX.cloud<1e8){
+    for(const [dy,op] of [[0,0.95],[-9,0.4],[-16,0.18]]){
+      const cg=new THREE.PlaneGeometry(16000,16000); cg.rotateX(-Math.PI/2);
+      const cm=new THREE.Mesh(cg,new THREE.MeshBasicMaterial({color:0xd4d8db,transparent:true,opacity:op,side:THREE.DoubleSide,depthWrite:false}));
+      cm.position.y=WX.cloud+dy; round.add(cm);
+    }
+  }
+}
+function applyWeather(rand){
+  const w=S.wx;
+  fog.far=REAL?Math.min(w.far,5600):w.far; fog.near=REAL?Math.min(w.near,fog.far*0.3):w.near;
+  sun.color.setHex(w.sunC); sun.intensity=w.sun;
+  hemi.color.setHex(w.hs); hemi.groundColor.setHex(w.hg); hemi.intensity=w.hemi;
+  const saz=S.saz;
+  sun.position.set(Math.sin(saz)*1000,w.sunE,-Math.cos(saz)*1000);
+  $('#view').style.background=`linear-gradient(to bottom, ${w.top} 0%, ${w.hor} 55%)`;
+  waterSky.value.set(w.hor).lerp(new THREE.Color(w.top),0.3);
+  $('#wxTag').textContent=w.name;
+}
+function viewFrom(x,z){ S.viewPos={x,z}; S.pitch=0;
+  if(REAL){ const p=profile(x,z,S.deg).sort((a,b)=>a-b); S.pitch=Math.max(-11,Math.min(3,0.55*p[p.length>>1])); }
+  S.pitch0=S.pitch;
+  placeCamera(); }
+function placeCamera(){
+  updateCompass();
+  if(!renderer||!S.viewPos) return;
+  const {x,z}=S.viewPos, y=hAt(x,z)+EYE, az=(S.deg+S.yaw)*Math.PI/180;
+  camera.position.set(x,y,z); camera.lookAt(x+Math.sin(az)*100,y+Math.tan((S.pitch||0)*Math.PI/180)*100,z-Math.cos(az)*100); render();
+}
+function render(){
+  if(!renderer) return;
+  const v=$('#view'), w=v.clientWidth, h=v.clientHeight;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h;
+  camera.fov=2*Math.atan(Math.tan(HFOV*Math.PI/360)/camera.aspect)*180/Math.PI;
+  camera.updateProjectionMatrix();
+  fog.color.set(S.wx?S.wx.hor:'#cccccc');
+  renderer.render(scene,camera);
+  viewLabels();
+}
+
+// ---------- names in the view (Eryri, after a guess) ----------
+let VL=null;
+const escH=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function nameCandidates(){
+  const out=[], seen=new Set(), add=(n,x,z,k,size,e)=>{ if(!n||seen.has(n)) return; seen.add(n); out.push({n,x,z,k,size,e}); };
+  for(const p of REAL.peaks||[]) add(p.n,p.x,p.z,0,0,p.e);
+  for(const l of REAL.lakes||[]) if(l.n&&l.lp) add(l.n,l.lp[0],l.lp[1],1,l.a||0,l.l);
+  for(const f of REAL.far||[]) add(f[0],f[1],f[2],f[4],f[5],f[3]);
+  return out;
+}
+function visibleNames(x,z){
+  const eye=hAt(x,z)+EYE, maxD=Math.min(5700,fog.far*0.97), list=[];
+  for(const c of nameCandidates()){
+    const d=Math.hypot(c.x-x,c.z-z); if(d<80||d>maxD) continue;
+    const ty=hAt(c.x,c.z)+(c.k?0.5:4), steps=Math.max(12,Math.min(120,Math.round(d/20)));
+    let vis=true;
+    for(let s=1;s<steps;s++){ const t=s/steps; if(t>0.985) break;
+      if(hAt(x+(c.x-x)*t,z+(c.z-z)*t) > eye+(ty-eye)*t+0.6){ vis=false; break; } }
+    if(!vis) continue;
+    const pri=(c.k?90+Math.log10(Math.max(1,c.size)):c.e/10)-d/150;
+    list.push({n:c.n,k:c.k,x:c.x,y:ty,z:c.z,pri});
+  }
+  return list.sort((a,b)=>b.pri-a.pri);
+}
+function viewLabels(){
+  const box=$('#vlabels'), btn=$('#namesBtn'); if(!box) return;
+  const on=REAL&&S.phase==='revealed'&&S.viewPos&&!S.hidden;
+  btn.style.display=on?'block':'none'; btn.setAttribute('aria-pressed',String(!!settings.names));
+  if(!on||!settings.names||!renderer){ box.innerHTML=''; return; }
+  const key=S.viewPos.x+','+S.viewPos.z+','+REAL.id+','+fog.far+','+CMP.on;
+  if(!VL||VL.key!==key) VL={key,list:visibleNames(S.viewPos.x,S.viewPos.z)};
+  const W=box.clientWidth, Hh=box.clientHeight, placed=[], v=new THREE.Vector3(); let html='';
+  camera.updateMatrixWorld();
+  for(const c of VL.list){
+    v.set(c.x,c.y,c.z).project(camera);
+    if(v.z>1||v.x<-0.97||v.x>0.97||v.y<-0.9||v.y>0.93) continue;
+    const sx=(v.x+1)/2*W, sy=(1-v.y)/2*Hh, w=c.n.length*6.6+8, ty=sy-(c.k?16:22);
+    if(sx-w/2<4||sx+w/2>W-4) continue;   // would be cut off at the edge
+    if(ty<44&&sx<200) continue;   // keep clear of the compass badge
+    if(placed.some(q=>Math.abs(q.x-sx)<(q.w+w)/2+4&&Math.abs(q.y-ty)<17)) continue;
+    placed.push({x:sx,y:ty,w}); html+=`<div class="vl${c.k?' lake':''}" style="left:${sx.toFixed(1)}px;top:${sy.toFixed(1)}px">${escH(c.n)}${CMP.on?' '+fmtB(brg(S.viewPos.x,S.viewPos.z,c.x,c.z)):''}</div>`;
+    if(placed.length>=9) break;
+  }
+  box.innerHTML=html;
+}
+
+// ---------- map ----------
+let layout={pad:0,inner:1,ox:0,oy:0,fpad:0,finner:1};
+function w2p(x,z){return [layout.ox+(x/SIZE+.5)*layout.inner, layout.oy+(z/SIZE+.5)*layout.inner];}
+function p2w(px,py){return [((px-layout.ox)/layout.inner-.5)*SIZE, ((py-layout.oy)/layout.inner-.5)*SIZE];}
+function markerLayout(){
+  const P=S.pts.map(p=>w2p(p.x,p.z)), off=24, lo=layout.fpad+11, hi=layout.fpad+layout.finner-11;
+  const dirs=[[1,-1],[-1,-1],[1,1],[-1,1],[0,-1.3],[1.3,0],[-1.3,0],[0,1.3]].map(([a,b])=>[a/Math.hypot(a,b),b/Math.hypot(a,b)]);
+  const placed=[];
+  return P.map((p,i)=>{
+    let best=null, bs=-1e9;
+    for(const d of dirs){ const bx=p[0]+d[0]*off, by=p[1]+d[1]*off; if(bx<lo||by<lo||bx>hi||by>hi) continue;
+      const others=P.filter((_,k)=>k!==i).concat(placed); const sc=others.length?Math.min(...others.map(q=>Math.hypot(q[0]-bx,q[1]-by))):99; if(sc>bs+4){bs=sc;best=[bx,by];} }
+    best=best||[p[0]+off*0.7,p[1]-off*0.7]; placed.push(best); return {p,b:best};
+  });
+}
+function gridRef(x,z){ if(REAL){ const E=REAL.Ec+x, Nn=REAL.Nc-z, f=v=>String(Math.floor((v%100000)/10)).padStart(4,'0'); return `${gridSq(E,Nn)} ${f(E)} ${f(Nn)}`; } const e=(S.gridE*10+Math.floor((x+HALF)/10))%1000, n=(S.gridN*10+Math.floor((HALF-z)/10))%1000; return String(e).padStart(3,'0')+' '+String(n).padStart(3,'0'); }
+// ---------- map zoom: pinch, ctrl/⌘ + scroll, drag to pan, or the + − buttons ----------
+const MZ={z:1,tx:0,ty:0,moved:false,r:null}, ZMAX=8;
+const CMP={on:false,a:null,b:null};   // compass: two map points and the bearing between them
+const brg=(ax,az,bx,bz)=>((Math.atan2(bx-ax,-(bz-az))*180/Math.PI)+360)%360;
+const fmtB=b=>String(Math.round(b)%360).padStart(3,'0')+'°';
+function mapApply(){
+  const cv=$('#map'), W=cv.clientWidth||1;
+  MZ.z=Math.min(ZMAX,Math.max(1,MZ.z));
+  const pd=Math.round(W*0.055), lo=(W-pd)*(1-MZ.z), hi=pd*(1-MZ.z);   // keep the frame covered
+  MZ.tx=Math.min(hi,Math.max(lo,MZ.tx)); MZ.ty=Math.min(hi,Math.max(lo,MZ.ty));
+  const R=MZ.r||{z:1,tx:0,ty:0}, k=MZ.z/R.z;
+  cv.style.transform=(Math.abs(k-1)>1e-4||Math.abs(MZ.tx-R.tx)>0.01||Math.abs(MZ.ty-R.ty)>0.01)?`translate(${MZ.tx-k*R.tx}px,${MZ.ty-k*R.ty}px) scale(${k})`:'';
+  $('#mapBox').classList.toggle('zoomed',MZ.z>1.001);
+  $('#zOut').disabled=MZ.z<=1.001; $('#zIn').disabled=MZ.z>=ZMAX-0.001; $('#zReset').style.display=MZ.z>1.001?'':'none';
+}
+let mzT=null; const mapSharpen=()=>{ clearTimeout(mzT); mzT=setTimeout(drawMap,150); };
+function zoomAt(f,cx,cy){ const z0=MZ.z, z1=Math.min(ZMAX,Math.max(1,z0*f)); MZ.tx=cx-(cx-MZ.tx)*z1/z0; MZ.ty=cy-(cy-MZ.ty)*z1/z0; MZ.z=z1; mapApply(); mapSharpen(); }
+function mapReset(){ const was=MZ.z>1.001; MZ.z=1; MZ.tx=MZ.ty=0; mapApply(); return was; }
+
+function drawMap(){
+  const cv=$('#map'), W=cv.clientWidth; if(!W||!S.truePos) return;
+  const bdpr=Math.min(window.devicePixelRatio||1,3), dpr=bdpr;
+  cv.width=Math.round(W*dpr); cv.height=Math.round(W*dpr);
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  const col={}; for(const k of ['paper','ink','contour','contour-index','grid','wood','tree','mark','good','bad','water','water-edge','road','road-casing','path']) col[k]=css('--'+k);
+  // pad/inner are the map frame; ox/oy/vin place the (possibly zoomed) map inside it. Lines and text stay their normal size.
+  const pad=Math.round(W*0.055), inner=W-2*pad, Zr=MZ.z, ox=MZ.tx+Zr*pad, oy=MZ.ty+Zr*pad, vin=inner*Zr;
+  layout={pad,inner:vin,ox,oy,fpad:pad,finner:inner}; MZ.r={z:Zr,tx:MZ.tx,ty:MZ.ty}; cv.style.transform='';
+  const gx_=v=>ox+v/(N-1)*vin, gy_=v=>oy+v/(N-1)*vin, sc=vin/SIZE;
+  ctx.fillStyle=col.paper; ctx.fillRect(0,0,W,W);
+  ctx.save(); ctx.beginPath(); ctx.rect(pad,pad,inner,inner); ctx.clip();
+  ctx.fillStyle=col.wood;
+  const ringPath=(rs)=>{ for(const r of rs){ for(let i=0;i<r.length;i+=2){ const [x,y]=w2p(r[i],r[i+1]); i?ctx.lineTo(x,y):ctx.moveTo(x,y);} ctx.closePath(); } };
+  if(REAL){ ctx.beginPath(); for(const w of woodP) ringPath(w.r); ctx.fill('evenodd'); }
+  else for(const t of trees){const [x,y]=w2p(t.x,t.z); ctx.beginPath(); ctx.arc(x,y,Math.max(t.lone?2.2:2.5,sc*(t.lone?6:t.t==='c'?7:10)),0,Math.PI*2); ctx.fill();}
+  ctx.beginPath();
+  for(let j=0;j<N-1;j++) for(let i=0;i<N-1;i++){
+    const v=[H[j*N+i],H[j*N+i+1],H[(j+1)*N+i+1],H[(j+1)*N+i]];
+    if(v[0]>=0&&v[1]>=0&&v[2]>=0&&v[3]>=0) continue;
+    const cp=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]], poly=[];
+    for(let c=0;c<4;c++){const d=(c+1)%4; if(v[c]<0) poly.push(cp[c]);
+      if((v[c]<0)!==(v[d]<0)){const t=v[c]/(v[c]-v[d]); poly.push([lerp(cp[c][0],cp[d][0],t),lerp(cp[c][1],cp[d][1],t)]);}}
+    ctx.moveTo(gx_(poly[0][0]),gy_(poly[0][1])); for(let q=1;q<poly.length;q++) ctx.lineTo(gx_(poly[q][0]),gy_(poly[q][1])); ctx.closePath();
+  }
+  ctx.fillStyle=col.water; ctx.fill(); ctx.strokeStyle=col.water; ctx.lineWidth=0.8; ctx.stroke();
+  if(REAL){
+    // scree and bare rock: grey stipple
+    ctx.fillStyle=col.ink;
+    for(const r of rockP){ const [a,b,c,d]=ringsBox(r), p0=w2p(a,b), p1=w2p(c,d);
+      ctx.save(); ctx.beginPath(); ringPath(r); ctx.clip('evenodd'); ctx.globalAlpha=0.45;
+      for(let y=p0[1];y<=p1[1];y+=5) for(let x=p0[0]+((y/5)%2)*2.5;x<=p1[0];x+=5){ ctx.fillRect(x+((x*7+y*3)%3)-1,y+((x*3+y*5)%3)-1,1.1,1.1); }
+      ctx.restore(); }
+    ctx.globalAlpha=1;
+    ctx.beginPath(); for(const lk of lakes) ringPath(lk.r); ctx.fillStyle=col.water; ctx.fill('evenodd');
+    ctx.strokeStyle=col['water-edge']; ctx.lineWidth=1; ctx.stroke();
+  }
+  ctx.strokeStyle=col.grid; ctx.lineWidth=0.8; ctx.beginPath();
+  for(let m=0;m<=SIZE;m+=100){const px=ox+m/SIZE*vin, py=oy+m/SIZE*vin; ctx.moveTo(px,pad); ctx.lineTo(px,pad+inner); ctx.moveTo(pad,py); ctx.lineTo(pad+inner,py);} ctx.stroke();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  // on real crags, drop contours that would crowd closer than ~3.4 px (index ~2.4 px); index contours survive longer
+  const pxm=vin/SIZE, gMinor=CI*pxm/3.4, gIndex=50*pxm/2.4;
+  for(const {v,segs} of contours){
+    const idx=v%50===0; ctx.strokeStyle=idx?col['contour-index']:col.contour; ctx.lineWidth=REAL?(idx?1.3:0.7):(idx?1.5:0.8);
+    const lim=idx?gIndex:gMinor;
+    ctx.beginPath(); for(let k=0;k<segs.length;k+=4){
+      if(REAL){ const ci=Math.min(N-1,Math.round((segs[k]+segs[k+2])/2)), cj=Math.min(N-1,Math.round((segs[k+1]+segs[k+3])/2)), ck=cj*N+ci; if(G[ck]>lim||(M[ck]&16)) continue; }
+      ctx.moveTo(gx_(segs[k]),gy_(segs[k+1]));ctx.lineTo(gx_(segs[k+2]),gy_(segs[k+3]));} ctx.stroke();
+  }
+  ctx.strokeStyle=col['water-edge']; ctx.lineWidth=1.2; ctx.beginPath();
+  for(let k=0;k<shore.length;k+=4){ctx.moveTo(gx_(shore[k]),gy_(shore[k+1]));ctx.lineTo(gx_(shore[k+2]),gy_(shore[k+3]));} ctx.stroke();
+  // crags: short hachures pointing down the steepest ground
+  ctx.strokeStyle=col.ink; ctx.globalAlpha=0.7; ctx.lineWidth=0.9; ctx.beginPath();
+  const hs=Zr>=2.5?1:2;   // denser hachures when zoomed in
+  for(let j=1;j<N-1;j+=hs) for(let i=1;i<N-1;i+=hs){ const k=j*N+i; if(H[k]<1) continue;
+    const gx=(H[k+1]-H[k-1])/(2*CS), gz=(H[k+N]-H[k-N])/(2*CS), gm=Math.hypot(gx,gz); if(gm<1.05||(REAL&&(M[k]&16))) continue;
+    const x=gx_(i), y=gy_(j); if(x<pad-6||y<pad-6||x>pad+inner+6||y>pad+inner+6) continue; ctx.moveTo(x,y); ctx.lineTo(x-gx/gm*4.5,y-gz/gm*4.5); }
+  ctx.stroke(); ctx.globalAlpha=1;
+  const line=(pts)=>{ctx.beginPath(); pts.forEach((p,k)=>{const [x,y]=w2p(p[0],p[1]); k?ctx.lineTo(x,y):ctx.moveTo(x,y);}); ctx.stroke();};
+  // field walls
+  ctx.strokeStyle=col.ink; ctx.lineWidth=0.8; ctx.globalAlpha=0.85; ctx.beginPath();
+  for(const [x1,z1,x2,z2] of walls){const a=w2p(x1,z1), b=w2p(x2,z2); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]);} ctx.stroke(); ctx.globalAlpha=1;
+  ctx.strokeStyle=col['water-edge']; for(const r of rivers){ ctx.lineWidth=r.w&&r.w<4?Math.max(1,sc*3):Math.max(1.8,sc*6); line(r); }
+  if(cliffs.length){ ctx.strokeStyle=col.ink; ctx.lineWidth=1.1;
+    for(const cl of cliffs){ line(cl); ctx.beginPath();
+      for(let k=1;k<cl.length;k++){ const a=w2p(cl[k-1][0],cl[k-1][1]), b=w2p(cl[k][0],cl[k][1]), dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy); if(L<0.5) continue;
+        const nx=-dy/L*4, ny=dx/L*4; for(let t=1.5;t<L;t+=3.5){ const x=a[0]+dx*t/L, y=a[1]+dy*t/L; ctx.moveTo(x,y); ctx.lineTo(x+nx,y+ny); } }
+      ctx.stroke(); } }
+  // footpaths
+  ctx.strokeStyle=col.path; ctx.lineWidth=1.7; ctx.setLineDash([4,3]); for(const f of footpaths) line(f); ctx.setLineDash([]);
+  for(const r of roads){ ctx.strokeStyle=col['road-casing']; ctx.lineWidth=Math.max(4.6,sc*11); line(r); ctx.strokeStyle=col.road; ctx.lineWidth=Math.max(2.8,sc*7); line(r); }
+  for(const r of rails){ ctx.strokeStyle=col.ink; ctx.lineWidth=3; line(r); ctx.strokeStyle=col.paper; ctx.lineWidth=1.2; ctx.setLineDash([3,3]); line(r); ctx.setLineDash([]); }
+  // power line with pole ticks
+  if(power){ ctx.strokeStyle=col.ink; ctx.lineWidth=0.9; line(power.poles);
+    const dl=[power.b[0]-power.a[0],power.b[1]-power.a[1]], ll=Math.hypot(dl[0],dl[1]), px=-dl[1]/ll, pz=dl[0]/ll;
+    ctx.beginPath(); for(const pp of power.poles){const [x,y]=w2p(pp[0],pp[1]); ctx.moveTo(x-px*3.5,y-pz*3.5); ctx.lineTo(x+px*3.5,y+pz*3.5);} ctx.stroke(); }
+  ctx.fillStyle=col.tree; ctx.strokeStyle=col.tree; ctx.lineWidth=0.9;
+  trees.forEach((t,k)=>{ if(k%4&&!t.lone) return; const [x,y]=w2p(t.x,t.z);
+    if(t.t==='c'){ctx.beginPath();ctx.moveTo(x,y-2.4);ctx.lineTo(x+2,y+1.6);ctx.lineTo(x-2,y+1.6);ctx.closePath();ctx.fill();}
+    else {ctx.beginPath();ctx.arc(x,y,1.9,0,Math.PI*2);ctx.stroke();} });
+  // buildings
+  ctx.fillStyle=col.ink;
+  for(const b of buildings){const [x,y]=w2p(b.x,b.z); ctx.save(); ctx.translate(x,y); ctx.rotate(b.th); const bw=Math.max(4,b.w*sc), bd=Math.max(3,b.d*sc); ctx.fillRect(-bw/2,-bd/2,bw,bd); ctx.restore();}
+  ctx.fillStyle=col.ink;
+  for(const b of boulders){const [x,y]=w2p(b.x,b.z); ctx.beginPath(); ctx.arc(x,y,Math.max(1.1,Math.min(2.2,b.s*sc*0.9+0.6)),0,Math.PI*2); ctx.fill();}
+  ctx.restore();
+  ctx.fillStyle=col.grid; ctx.font=(REAL?'600 9px':'600 10px')+' Barlow, system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let m=0;m<SIZE;m+=100){
+    if(REAL&&vin*100/SIZE<24&&(m/100)%2) continue;
+    const lbl=REAL?String((S.gridE+m/100)%1000).padStart(3,'0'):String(S.gridE+m/100).padStart(2,'0').slice(-2), lblN=REAL?String((S.gridN+(SIZE-m-100)/100)%1000).padStart(3,'0'):String(S.gridN+(SIZE-m-100)/100).padStart(2,'0').slice(-2), mx=ox+(m+50)/SIZE*vin, my=oy+(m+50)/SIZE*vin;
+    if(mx>pad+4&&mx<pad+inner-4){ ctx.fillText(lbl,mx,pad/2); ctx.fillText(lbl,mx,W-pad/2); }
+    if(my>pad+4&&my<pad+inner-4){ ctx.fillText(lblN,pad/2,my); ctx.fillText(lblN,W-pad/2,my); }
+  }
+  const ptsPx=S.pts.map(p=>w2p(p.x,p.z));
+  const ML=S.mode==='spots'?markerLayout():[];
+  const avoid=ML.flatMap(m=>[m.p,m.b]);
+  // trig point
+  if(trig){ const [x,y]=w2p(trig.x,trig.z); ctx.strokeStyle=col['water-edge']; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(x,y-5.5); ctx.lineTo(x+5,y+3.2); ctx.lineTo(x-5,y+3.2); ctx.closePath(); ctx.stroke(); ctx.fillStyle=col['water-edge']; ctx.beginPath(); ctx.arc(x,y+0.4,1.3,0,Math.PI*2); ctx.fill(); }
+  ctx.font='600 10.5px Barlow, system-ui, sans-serif'; ctx.textAlign='left';
+  const placed=[];
+  if(REAL){
+    const clear=(x,y,w)=>!avoid.some(p=>Math.hypot(p[0]-x,p[1]-y)<24)&&!placed.some(p=>Math.abs(p[0]-x)<(p[2]+w)/2+6&&Math.abs(p[1]-y)<13)&&x-w/2>pad+2&&x+w/2<pad+inner-2&&y>pad+8&&y<pad+inner-8;
+    const lab=(txt,x,y,font,fill)=>{ ctx.font=font; const w=ctx.measureText(txt).width;
+      for(const [ox,oy] of [[0,0],[0,-14],[0,14],[w/2+8,0],[-w/2-8,0]]){ const cx=x+ox, cy=y+oy; if(!clear(cx,cy,w)) continue;
+        ctx.textAlign='center'; ctx.lineJoin='round'; ctx.strokeStyle=col.paper; ctx.lineWidth=3; ctx.strokeText(txt,cx,cy); ctx.fillStyle=fill; ctx.fillText(txt,cx,cy); placed.push([cx,cy,w]); return true; }
+      return false; };
+    for(const s of spots){ const [x,y]=w2p(s.x,s.z); if(x<pad||y<pad||x>pad+inner||y>pad+inner) continue;
+      const isTrig=trig&&Math.hypot(trig.x-s.x,trig.z-s.z)<30;
+      if(!isTrig){ ctx.fillStyle=col.ink; ctx.beginPath(); ctx.arc(x,y,1.8,0,Math.PI*2); ctx.fill(); }
+      ctx.font='600 11px Barlow, system-ui, sans-serif'; const w=ctx.measureText(s.n+' '+s.v).width;
+      if(!lab(s.n+' '+s.v,x+w/2+(isTrig?8:5),y+0.5,'600 11px Barlow, system-ui, sans-serif',col.ink)) lab(s.n+' '+s.v,x-w/2-(isTrig?8:5),y+0.5,'600 11px Barlow, system-ui, sans-serif',col.ink); }
+    const best={}; for(const lk of lakes) if(lk.n&&lk.lp&&(!best[lk.n]||lk.a>best[lk.n].a)) best[lk.n]=lk;
+    for(const lk of Object.values(best)){ const [x,y]=w2p(lk.lp[0],lk.lp[1]); lab(lk.n,x,y,'italic 600 11.5px Barlow, system-ui, sans-serif',col['water-edge']); }
+    for(const p of places){ const [x,y]=w2p(p.x,p.z); lab(p.n,x,y-10,'800 13px "Barlow Condensed", sans-serif',col.ink); }
+  }
+  else for(const s of spots){const [x,y]=w2p(s.x,s.z); if(avoid.some(p=>Math.hypot(p[0]-x,p[1]-y)<30)) continue;
+    const isTrig=trig&&Math.hypot(trig.x-s.x,trig.z-s.z)<20;
+    ctx.fillStyle=col.ink; if(!isTrig){ctx.beginPath(); ctx.arc(x,y,1.8,0,Math.PI*2); ctx.fill();} ctx.fillText(String(s.v),x+(isTrig?7:4),y+0.5); placed.push([x+10,y]);}
+  ctx.textAlign='center';
+  for(const {v,segs} of contours){
+    if(v%50!==0) continue;
+    let n=0; const nSeg=segs.length/4, stride=Math.max(1,Math.floor(nSeg/23));
+    for(let s=Math.floor(stride/2); s<nSeg && n<2; s+=stride){
+      const k=s*4, x1=gx_(segs[k]),y1=gy_(segs[k+1]),x2=gx_(segs[k+2]),y2=gy_(segs[k+3]), x=(x1+x2)/2, y=(y1+y2)/2;
+      if(x<pad+14||y<pad+10||x>pad+inner-14||y>pad+inner-10) continue;
+      if(placed.some(p=>Math.hypot(p[0]-x,p[1]-y)<90)) continue;
+      if(avoid.some(p=>Math.hypot(p[0]-x,p[1]-y)<34)) continue;
+      let ang=Math.atan2(y2-y1,x2-x1); if(ang>Math.PI/2)ang-=Math.PI; if(ang<-Math.PI/2)ang+=Math.PI;
+      const txt=String(v), tw=ctx.measureText(txt).width;
+      ctx.save(); ctx.translate(x,y); ctx.rotate(ang); ctx.fillStyle=col.paper; ctx.fillRect(-tw/2-3,-6.5,tw+6,13);
+      ctx.fillStyle=col['contour-index']; ctx.fillText(txt,0,0.5); ctx.restore(); placed.push([x,y]); n++;
+    }
+  }
+  ctx.strokeStyle=col.ink; ctx.lineWidth=1.2; ctx.strokeRect(pad,pad,inner,inner);
+  const nx=pad+inner-18, ny=pad+26;
+  ctx.fillStyle=col.paper; ctx.beginPath(); ctx.arc(nx,ny-2,15,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=col.ink; ctx.beginPath(); ctx.moveTo(nx,ny-14); ctx.lineTo(nx+6,ny+2); ctx.lineTo(nx,ny-2); ctx.lineTo(nx-6,ny+2); ctx.closePath(); ctx.fill();
+  ctx.font='800 11px "Barlow Condensed", sans-serif'; ctx.fillText('G',nx,ny+8);
+  const rev=S.phase==='revealed';
+  ctx.save(); ctx.beginPath(); ctx.rect(pad,pad,inner,inner); ctx.clip();
+  if(rev&&S.viewPos){
+    const [px,py]=w2p(S.viewPos.x,S.viewPos.z), az=(S.deg+S.yaw)*Math.PI/180-Math.PI/2, hf=HFOV*Math.PI/360, len=vin*0.3;
+    ctx.fillStyle=col.mark; ctx.globalAlpha=0.16; ctx.beginPath(); ctx.moveTo(px,py); ctx.arc(px,py,len,az-hf,az+hf); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=0.7; ctx.strokeStyle=col.mark; ctx.lineWidth=1; ctx.stroke(); ctx.globalAlpha=1;
+  }
+  if(S.mode==='spots'){
+    // hollow rings at each spot so the map underneath stays readable; letters sit off to one side
+    ML.forEach(({p:[x,y],b:[bx,by]},i)=>{
+      let ring=col.mark, fill=col.paper, txt=col.mark;
+      if(rev){ if(i===S.trueIdx){ring=fill=col.good;txt='#fff';} else if(i===S.picked||(S.wrong&&S.wrong.has(i))){ring=fill=col.bad;txt='#fff';} }
+      else if(S.wrong&&S.wrong.has(i)){ring=fill=col.bad;txt='#fff';}
+      const dx=bx-x, dy=by-y, dl=Math.hypot(dx,dy);
+      ctx.lineCap='round';
+      ctx.strokeStyle=col.paper; ctx.lineWidth=4.5; ctx.beginPath(); ctx.moveTo(x+dx/dl*7.5,y+dy/dl*7.5); ctx.lineTo(bx-dx/dl*8,by-dy/dl*8); ctx.stroke();
+      ctx.strokeStyle=ring; ctx.lineWidth=1.6; ctx.stroke();
+      ctx.strokeStyle=col.paper; ctx.lineWidth=5; ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle=ring; ctx.lineWidth=2.4; ctx.stroke();
+      ctx.fillStyle=ring; ctx.beginPath(); ctx.arc(x,y,1.3,0,Math.PI*2); ctx.fill();
+      if(rev&&S.viewPos&&S.pts[i].x===S.viewPos.x&&S.pts[i].z===S.viewPos.z){ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.strokeStyle=col.mark;ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);}
+      ctx.font='800 17px "Barlow Condensed", sans-serif'; ctx.textAlign='center'; ctx.lineJoin='round';
+      ctx.strokeStyle=col.paper; ctx.lineWidth=4; ctx.strokeText(LETTERS[i],bx,by+1);
+      ctx.fillStyle=ring; ctx.fillText(LETTERS[i],bx,by+1);
+    });
+  } else {
+    const [tx,ty]=w2p(S.truePos.x,S.truePos.z);
+    if(S.guess){
+      const [gx,gy]=w2p(S.guess.x,S.guess.z);
+      if(rev){ ctx.strokeStyle=col.ink; ctx.setLineDash([4,4]); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(gx,gy); ctx.lineTo(tx,ty); ctx.stroke(); ctx.setLineDash([]); }
+      ctx.strokeStyle=rev?col.bad:col.mark; ctx.lineWidth=2.2; ctx.beginPath(); ctx.arc(gx,gy,9,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gx-14,gy); ctx.lineTo(gx-4,gy); ctx.moveTo(gx+4,gy); ctx.lineTo(gx+14,gy); ctx.moveTo(gx,gy-14); ctx.lineTo(gx,gy-4); ctx.moveTo(gx,gy+4); ctx.lineTo(gx,gy+14); ctx.stroke();
+    }
+    if(rev){ ctx.fillStyle=col.good; ctx.beginPath(); ctx.arc(tx,ty,8,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); }
+  }
+  if(rev&&S.viewPos&&!(S.viewPos.x===S.truePos.x&&S.viewPos.z===S.truePos.z)&&!S.pts.some(p=>p.x===S.viewPos.x&&p.z===S.viewPos.z)){
+    const [vx,vy]=w2p(S.viewPos.x,S.viewPos.z); ctx.fillStyle=col.mark; ctx.beginPath(); ctx.arc(vx,vy,5,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=col.paper; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  if(S.oc&&S.play==='orient'){
+    const OC='#b3187f', cs=S.oc.ctrls, P=[S.oc.start,...cs].map(p=>w2p(p[0],p[1]));
+    ctx.strokeStyle=OC; ctx.fillStyle=OC; ctx.lineWidth=2; ctx.lineCap='round';
+    for(let k=1;k<P.length;k++){ const [ax,ay]=P[k-1],[bx,by]=P[k], L=Math.hypot(bx-ax,by-ay); if(L<28) continue; const ux=(bx-ax)/L, uy=(by-ay)/L;
+      ctx.globalAlpha=k<=S.ci?0.4:1; ctx.beginPath(); ctx.moveTo(ax+ux*12,ay+uy*12); ctx.lineTo(bx-ux*12,by-uy*12); ctx.stroke(); }
+    ctx.globalAlpha=1;
+    { const [sx,sy]=P[0], a=Math.atan2(P[1][1]-sy,P[1][0]-sx); ctx.beginPath(); for(let q=0;q<3;q++){ const t=a+q*2*Math.PI/3; ctx.lineTo(sx+Math.cos(t)*11,sy+Math.sin(t)*11); } ctx.closePath(); ctx.stroke(); }
+    cs.forEach((c,k)=>{ const [x,y]=P[k+1], last=k===cs.length-1; ctx.globalAlpha=k<S.ci?0.4:1;
+      ctx.strokeStyle=OC; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,10,0,Math.PI*2); ctx.stroke();
+      if(last){ ctx.beginPath(); ctx.arc(x,y,6.5,0,Math.PI*2); ctx.stroke(); }
+      else { ctx.font='800 15px "Barlow Condensed", sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineWidth=3.5; ctx.strokeStyle=col.paper; ctx.strokeText(String(k+1),x+15,y-13); ctx.fillStyle=OC; ctx.fillText(String(k+1),x+15,y-13); } });
+    ctx.globalAlpha=1;
+    if(S.phase==='done'&&S.route){ ctx.strokeStyle='#d63a2f'; ctx.lineWidth=2.2; ctx.beginPath(); S.route.forEach((p,k)=>{ const [x,y]=w2p(p[0],p[1]); k?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+      ctx.fillStyle='#d63a2f'; S.route.forEach(p=>{ const [x,y]=w2p(p[0],p[1]); ctx.beginPath(); ctx.arc(x,y,2.4,0,Math.PI*2); ctx.fill(); }); }
+    if(S.viewPos&&(S.oc.show||S.phase==='done'||Date.now()<(S.peekUntil||0))){ const [x,y]=w2p(S.viewPos.x,S.viewPos.z), a=(S.yaw-90)*Math.PI/180;
+      ctx.fillStyle='rgba(30,110,220,.22)'; ctx.beginPath(); ctx.moveTo(x,y); ctx.arc(x,y,28,a-0.45,a+0.45); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#1e6edc'; ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,5.5,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+  }
+  if(CMP.on){
+    ctx.lineCap='round';
+    if(CMP.a){ const [ax,ay]=w2p(CMP.a[0],CMP.a[1]);
+      if(CMP.b){ const [bx,by]=w2p(CMP.b[0],CMP.b[1]);
+        ctx.strokeStyle=col.paper; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+        ctx.strokeStyle='#c0392b'; ctx.lineWidth=2; ctx.stroke();
+        const dd=Math.hypot(CMP.b[0]-CMP.a[0],CMP.b[1]-CMP.a[1]), t=fmtB(brg(CMP.a[0],CMP.a[1],CMP.b[0],CMP.b[1]))+' · '+(dd<1000?Math.round(dd)+' m':(dd/1000).toFixed(2)+' km');
+        ctx.font='700 13px Barlow, system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        const tw=ctx.measureText(t).width+12, mx=Math.min(pad+inner-tw/2-4,Math.max(pad+tw/2+4,(ax+bx)/2)), my=Math.min(pad+inner-14,Math.max(pad+14,(ay+by)/2-16));
+        ctx.fillStyle='rgba(28,40,51,.88)'; ctx.fillRect(mx-tw/2,my-10,tw,20); ctx.fillStyle='#fff'; ctx.fillText(t,mx,my+0.5);
+        ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.arc(bx,by,4,0,Math.PI*2); ctx.fill(); }
+      ctx.fillStyle='#c0392b'; ctx.strokeStyle=col.paper; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(ax,ay,5,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+    if(!CMP.b){ ctx.font='600 12px Barlow, system-ui, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; const t='Tapia ddau bwynt i fesur cyfeiriant', tw=ctx.measureText(t).width+12;
+      ctx.fillStyle='rgba(28,40,51,.85)'; ctx.fillRect(pad+6,pad+6,tw,22); ctx.fillStyle='#fff'; ctx.fillText(t,pad+12,pad+17.5); }
+  }
+  ctx.restore();
+}
+
+// ---------- UI ----------
+let S={};
+const canLook=()=>S.phase&&!S.hidden&&(S.phase==='revealed'||D.look);
+function updateCompass(){
+  if(!S.dir) return;
+  $('#view').style.touchAction=canLook()?'none':'pan-y';   // swipes on the view look around; they only scroll the page when looking is off
+  const b=((Math.round(S.deg+S.yaw)%360)+360)%360;
+  $('#compass').style.transform=`rotate(${S.yaw}deg)`;
+  if(S.play==='orient'){ $('#facingTxt').innerHTML=tx('oHead',{b:fmtB(b)}); $('#resetView').style.display='none'; $('#lookHint').style.display=S.phase==='course'&&!S.dragged?'block':'none'; return; }
+  $('#facingTxt').innerHTML='Yn wynebu’r '+S.dir.n+(Math.abs(S.yaw)>2||CMP.on?`<br><small style="font:400 12px Barlow,system-ui,sans-serif;opacity:.85">Yn edrych ${String(b).padStart(3,'0')}°</small>`:'');
+  $('#resetView').style.display=(canLook()&&(Math.abs(S.yaw)>2||Math.abs(S.pitch-(S.pitch0??S.pitch))>2))?'block':'none';
+  $('#lookHint').style.display=(canLook()&&!S.dragged&&S.phase==='guess')?'block':'none';
+}
+function updateChoices(){
+  const box=$('#choices'); box.innerHTML='';
+  if(S.mode==='orient'){
+    if(S.phase==='course'){ const k=S.ci, n=S.oc.ctrls.length, c=S.oc.ctrls[k], last=k===n-1, p=document.createElement('div'); p.className='ocard';
+      p.innerHTML=`<b>${last?tx('oFinish'):tx('oCtrl',{n:k+1,t:n-1})}</b><span>${last?'':tx('f_'+c[2])}</span><span class="otime">⏱ ${fmtT(S.otime)}</span>`; box.appendChild(p);
+      if(!S.oc.show){ const b=document.createElement('button'); b.className='linkbtn'; b.type='button'; b.textContent=tx('oPeek');
+        b.onclick=()=>{ S.otime+=30; S.peekUntil=Date.now()+5000; drawMap(); updateChoices(); setTimeout(drawMap,5100); }; box.appendChild(b); } }
+    return;
+  }
+  if(S.mode==='spots'){
+    S.pts.forEach((p,i)=>{
+      const b=document.createElement('button'); b.className='choice'; b.textContent=LETTERS[i];
+      b.setAttribute('aria-label',(S.phase==='guess'?'Dyfalu ':'Dangos yr olygfa o ')+LETTERS[i]);
+      if(S.phase==='guess'&&S.wrong&&S.wrong.has(i)){ b.classList.add('bad'); b.disabled=true; }
+      if(S.phase==='revealed'){ if(i===S.trueIdx)b.classList.add('good'); else if(i===S.picked)b.classList.add('bad'); if(S.viewPos&&p.x===S.viewPos.x&&p.z===S.viewPos.z)b.classList.add('viewing'); }
+      b.onclick=()=>{ if(S.phase==='guess') choose(i); else { viewFrom(p.x,p.z); drawMap(); updateChoices(); setTag(); } };
+      box.appendChild(b);
+    });
+  } else if(S.phase==='guess'){
+    if(S.guess){ const b=document.createElement('button'); b.className='confirm'; b.textContent='Cadarnhau’r dyfaliad'; b.onclick=confirmGuess; box.appendChild(b); }
+    else { const p=document.createElement('p'); p.className='hint'; p.textContent='Tapia’r map lle rwyt ti’n meddwl rwyt ti’n sefyll.'; box.appendChild(p); }
+  }
+}
+function updateStats(){
+  if(S.play==='orient'){ const n=Object.keys(olv.best).length, st=Object.values(olv.stars).reduce((a,b)=>a+b,0); $('#stats').textContent=n?tx('oStats',{n,t:OLV.length,s:st}):tx('oStats0'); return; }
+  if(S.play==='levels'){ $('#stats').textContent=`Lefel orau: ${lvl.best}.`; return; }
+  if(S.play==='eryri'){ const n=Object.keys(estats.seen).length, st=estats;
+    $('#stats').textContent = S.mode==='free'
+      ? (st.fPlayed ? `Cyfartaledd ${Math.round(st.fDist/st.fPlayed)} m dros ${st.fPlayed} rownd. Agosaf ${Math.round(st.fBest)} m. Wedi gweld ${n} o ${ERY.length} lle.` : `${ERY.length} o lefydd go iawn yn Eryri. Rho bin lle rwyt ti’n meddwl rwyt ti’n sefyll.`)
+      : (st.played ? `${st.correct} o ${st.played} yn gywir. Rhediad presennol ${st.streak}, gorau ${st.best}. Wedi gweld ${n} o ${ERY.length} lle.` : `${ERY.length} o lefydd go iawn yn Eryri, o lawr y dyffryn i’r Carneddau yn y niwl.`);
+    return; }
+  if(S.play==='daily'){ $('#stats').textContent = dstats.played ? `Rhediad dyddiol: ${dstats.streak} diwrnod. Sgôr orau: ${dstats.best} o 500. Diwrnodau wedi’u chwarae: ${dstats.played}.` : 'Pos newydd bob dydd, yr un fath i bawb.'; return; }
+  if(S.mode==='free'){
+    $('#stats').textContent = stats.fPlayed ? `Cyfartaledd ${Math.round(stats.fDist/stats.fPlayed)} m dros ${stats.fPlayed} rownd. Agosaf ${Math.round(stats.fBest)} m. ${stats.fScore} pwynt i gyd.` : 'Dim dyfaliadau eto.';
+  } else {
+    $('#stats').textContent = stats.played ? `${stats.correct} o ${stats.played} yn gywir. Rhediad presennol ${stats.streak}, gorau ${stats.best}.` : 'Dim dyfaliadau eto.';
+  }
+}
+function setTag(){
+  const tag=$('#viewtag');
+  if(S.phase!=='revealed'||!S.viewPos){ tag.style.display='none'; return; }
+  tag.style.display='block';
+  const vp=S.viewPos, i=S.pts.findIndex(p=>p.x===vp.x&&p.z===vp.z);
+  if(vp.x===S.truePos.x&&vp.z===S.truePos.z) tag.textContent= S.mode==='spots'?`Dy olygfa di, o ${LETTERS[S.trueIdx]}`:'Dy olygfa di';
+  else tag.textContent= i>=0?`Golygfa o ${LETTERS[i]}`:`Golygfa o ${gridRef(vp.x,vp.z)}`;
+}
+function reveal(){
+  S.phase='revealed'; clearInterval(S.timerId); S.hidden=false;
+  $('#cover').style.display='none'; $('#countdown').style.display='none';
+  if(S.play==='eryri'&&REAL) estats.seen[REAL.id]=1;
+  save(); updateStats();
+  viewFrom(S.truePos.x,S.truePos.z); drawMap(); updateChoices(); setTag(); updateTop();
+}
+const TX={f_pb:'Tro yn y llwybr',f_kn:'Bryncyn',oHead:'Cyfeiriad ${b}',oHint:'Llusga i edrych · tapia’r tir i symud',oIntro:'Ymwela â’r pwyntiau yn eu trefn. Tapia’r tir yn yr olygfa i symud yno.',oCtrl:'Pwynt ${n} o ${t}',oFinish:'Diwedd',f_pj:'Cyffordd llwybrau',f_su:'Copa',f_le:'Pen y llyn',f_sj:'Cymer nentydd',f_cf:'Troed y graig',oPeek:'Ble ydw i? (+30 e)',oSky:'Tapia ar y tir i symud',oEdge:'Mae hynny oddi ar ymyl y map',oFar:'Rhy bell: hyd at ${m} m ar y tro',oWater:'Does dim modd croesi dŵr',oSteep:'Rhy serth: chwilia am ffordd arall',oBlock:'Does dim modd mynd y ffordd honno',oPunch:'Pwynt ${n} ✓',oDone:'Cwrs wedi’i gwblhau!',oTime:'Dy amser ${t} · par ${p}',oRoute:'Gweld fy llwybr',oTry:'Rho gynnig arall',oLevel:'Cwrs ${n}',oShown:'safle i’w weld',oHidden:'safle wedi’i guddio',oNext:'Nesaf: cwrs ${n}',oAgain:'Rhedeg eto',oRestart:'Ailddechrau’r cwrs',oStats:'${n} o ${t} cwrs wedi’u gorffen · ${s} ★',oStats0:'Cyfeiriannu ar dir go iawn Eryri: 20 cwrs, yn mynd yn anoddach.',oFail:'Methu gosod cwrs yma. Rho gynnig arall.',cmp:'Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant',cmpHint:'Tapia ddau bwynt i fesur cyfeiriant',loading:'Wrthi’n llwytho ${n}…',loadFail:'Methu llwytho’r lle hwn. Gwiria dy gysylltiad a rho gynnig arall.',correct:'Cywir!',start:'Dyna ddechrau rhediad.',row:'Dyna ${n} yn olynol!',best:' Dy orau erioed.',again:'Cywir y tro yma. Mae dy rediad yn ailddechrau o’r un nesaf.',lvl:'Lefel ${n} wedi’i chwblhau.',wrongT:'Anghywir — rho gynnig arall',wrongM:'Doeddet ti ddim yn sefyll yn ${L}.',ends:' Dyna ddiwedd dy rediad o ${n}.',lvlWrong:'Roeddet ti yn ${T}, nid ${L}.',tryA:'Rho gynnig arall',show:'Dangos yr ateb',look:'Edrych o gwmpas',where:'Gweld ble roeddwn i',retry:'<b>Nid ${L}.</b><small>Rho gynnig ar fan arall, neu <button class="linkbtn" id="showAns" type="button">dangos yr ateb</button>.</small>',out:'${d} m allan, am ${p} pwynt.'};
+const tx=(k,o={})=>TX[k].replace(/\$\{(\w+)\}/g,(m,v)=>o[v]);
+function showPop(kind,icon,title,streak,msg,btns){
+  const p=$('#pop'); p.className='on '+kind; $('#popI').textContent=icon; $('#popT').textContent=title;
+  $('#popS').textContent=streak||''; $('#popS').style.display=streak?'inline-block':'none'; $('#popM').textContent=msg;
+  const bb=$('#popB'); bb.innerHTML='';
+  btns.forEach(([label,fn,pri])=>{ const b=document.createElement('button'); b.type='button'; b.textContent=label; if(pri) b.className='pri'; b.onclick=e=>{ e.stopPropagation(); hidePop(); if(fn) fn(); }; bb.appendChild(b); });
+  setTimeout(()=>{ const f=bb.querySelector('.pri'); if(f) f.focus({preventScroll:true}); },30);
+}
+function hidePop(){ $('#pop').className=''; }
+$('#pop').addEventListener('click',e=>{ if(e.target.id==='pop') hidePop(); });
+const nextBtn=()=>[$('#next').textContent,()=>$('#next').click(),true];
+function spotStatus(ok,i){
+  const ref=gridRef(S.truePos.x,S.truePos.z);
+  return ok
+    ? `<b>Yn union — roeddet ti’n sefyll yn ${LETTERS[S.trueIdx]}.</b><small>Cyfeirnod grid ${ref}. Tapia unrhyw fan, neu unrhyw le ar y map, i gymharu golygfeydd.</small>`
+    : `<b>Ddim cweit. Roeddet ti yn ${LETTERS[S.trueIdx]}, nid ${LETTERS[i]}.</b><small>Cyfeirnod grid ${ref}. Tapia ${LETTERS[i]} i weld beth fyddet ti wedi’i weld o fan’na.</small>`;
+}
+function giveUp(){ hidePop(); if(S.phase!=='guess') return; S.gaveUp=true;
+  $('#status').innerHTML=spotStatus(false,S.picked); reveal(); }
+function choose(i){
+  if(S.wrong&&S.wrong.has(i)) return;
+  const first=!S.wrong||!S.wrong.size, st=S.play==='eryri'?estats:stats, oldStreak=st.streak;
+  S.picked=i; const ok=i===S.trueIdx;
+  if(!ok&&S.play!=='levels'){   // Eryri and Unlimited: a wrong spot is crossed off and you can go again
+    if(first){ st.played++; st.streak=0; }
+    (S.wrong=S.wrong||new Set()).add(i); save(); updateStats();
+    $('#status').innerHTML=tx('retry',{L:LETTERS[i]}); const sa=$('#showAns'); if(sa) sa.onclick=giveUp;
+    updateChoices(); drawMap();
+    showPop('bad','✕',tx('wrongT'),'',tx('wrongM',{L:LETTERS[i]})+(first&&oldStreak>0?tx('ends',{n:oldStreak}):''),[[tx('tryA'),null,true],[tx('show'),giveUp]]);
+    return;
+  }
+  if(S.play==='levels'){
+    S.passed=ok; if(ok){ lvl.level++; lvl.best=Math.max(lvl.best,lvl.level); lvl.attempt=0; } else lvl.attempt++;
+    store('way-levels',lvl);
+  } else if(first){ st.played++; if(ok){st.correct++;st.streak++;st.best=Math.max(st.best,st.streak);} else st.streak=0; }
+  $('#status').innerHTML = spotStatus(ok,i);
+  if(S.play==='levels') $('#status').innerHTML = (ok?`<b>Lefel ${lvl.level-1} wedi’i chwblhau!</b>`:`<b>Dim y tro hwn — rho gynnig arall ar lefel ${lvl.level}.</b>`)+$('#status').innerHTML.replace('<b>','<small><b>').replace('</b>','</b></small>');
+  reveal();
+  if(S.play==='levels'){
+    if(ok) showPop('good','✓',tx('correct'),'',tx('lvl',{n:lvl.level-1}),[nextBtn(),[tx('look'),null]]);
+    else showPop('bad','✕',tx('wrongT'),'',tx('lvlWrong',{T:LETTERS[S.trueIdx],L:LETTERS[i]}),[nextBtn(),[tx('where'),null]]);
+  } else if(!first){ showPop('good','✓',tx('correct'),'',tx('again'),[nextBtn(),[tx('look'),null]]);
+  } else {
+    const n=st.streak, nb=n>1&&n===st.best&&n>oldStreak&&st.best>1;
+    showPop('good','✓',tx('correct'),'🔥 '+n,(n===1?tx('start'):tx('row',{n}))+(nb?tx('best'):''),[nextBtn(),[tx('look'),null]]);
+  }
+}
+function confirmGuess(){
+  if(!S.guess) return;
+  const d=Math.hypot(S.guess.x-S.truePos.x,S.guess.z-S.truePos.z), score=Math.round(100*Math.exp(-d/150));
+  let ds=null;
+  if(S.play==='daily'){
+    ds=dailyState(); if(ds.done||ds.round!==S.dr) return;
+    ds.scores.push(score); ds.dists.push(Math.round(d)); ds.guesses.push({x:S.guess.x,z:S.guess.z}); ds.round++;
+    if(ds.round>=5){ ds.done=true; const tot=ds.scores.reduce((a,b)=>a+b,0);
+      dstats.streak = dstats.last===todayKey(-1) ? dstats.streak+1 : 1; dstats.last=ds.date; dstats.best=Math.max(dstats.best,tot); dstats.played++; store('way-dstats',dstats); }
+    store('way-daily',ds);
+  } else { const st=S.play==='eryri'?estats:stats; st.fPlayed++; st.fDist+=d; st.fScore+=score; st.fBest = st.fBest==null?d:Math.min(st.fBest,d); }
+  const verdict = d<40?'Yn union!':d<120?'Agos.':d<300?'Yn yr ardal iawn.':'Cryn bellter i ffwrdd.';
+  $('#status').innerHTML=`<b>${verdict} Roeddet ti ${Math.round(d)} m allan, am ${score} pwynt.</b><small>Roeddet ti’n sefyll yn ${gridRef(S.truePos.x,S.truePos.z)}. Tapia unrhyw le ar y map i weld yr olygfa o fan’na.</small>`;
+  if(ds&&ds.done) showDailySummary(ds);
+  reveal();
+  if(!(ds&&ds.done)) showPop(d<120?'good':d<300?'mid':'bad',d<120?'✓':'⌖',verdict,'',tx('out',{d:Math.round(d),p:score}),[nextBtn(),[tx('look'),null]]);
+}
+function startTimer(){
+  clearInterval(S.timerId); const cd=$('#countdown');
+  if(!D.timer){ cd.style.display='none'; return; }
+  let left=D.timer; cd.style.display='block'; cd.textContent=left+' s';
+  S.timerId=setInterval(()=>{ left--; if(left<=0){ clearInterval(S.timerId); cd.style.display='none'; S.hidden=true; $('#cover').style.display='grid'; S.yaw=0; updateCompass(); } else cd.textContent=left+' s'; },1000);
+}
+function newRound(){
+  hidePop(); mapReset(); CMP.a=CMP.b=null; if(S.timerId) clearInterval(S.timerId);
+  const play=settings.play; let mode, base, ds=null, dr=0;
+  if(play==='orient'){
+    if(S.play==='orient'&&S.phase==='done'&&S.oAdvance){ olv.cur=Math.min(OLV.length,olv.cur+1); store('way-orient',olv); }
+    S.oAdvance=false;
+    OL=OLV[olv.cur-1]; const P=ERY.find(e=>e.id===OL.place);
+    if(!ERYC[P.id]){ $('#status').innerHTML=`<small>${tx('loading',{n:P.name})}</small>`; vmsg(tx('loading',{n:P.name})); loadPlace(P.id).then(()=>{ vmsg(''); newRound(); }).catch(()=>loadFailMsg(P.id)); return; }
+    D=Object.assign({},LEVELS.easy,{look:true,any:false,anyP:0,timer:0,similar:false,weathers:[OL.wx],id:P.id,name:P.name}); mode='orient'; base=hashStr('orient-'+olv.cur);
+  }
+  else if(play==='eryri'){
+    let P=ERY.find(e=>e.id===(S.ePend||settings.eplace));
+    if(!P){ const pool=ERY.filter(e=>e.id!==S.eLast); P=pool[Math.floor(Math.random()*pool.length)]; }   // random, never the same place twice running
+    if(!ERYC[P.id]){
+      $('#status').innerHTML=`<small>${tx('loading',{n:P.name})}</small>`;
+      vmsg(tx('loading',{n:P.name})); loadPlace(P.id).then(()=>{ vmsg(''); S.ePend=P.id; newRound(); }).catch(()=>{ S.ePend=null; loadFailMsg(P.id); });
+      return;
+    }
+    S.ePend=null;
+    S.eLast=P.id; D=Object.assign({},LEVELS[settings.level],{id:P.id,name:P.name}); mode=settings.mode; base=Math.floor(Math.random()*1e9); }
+  else if(play==='levels'){ D=levelParams(lvl.level); mode='spots'; base=hashStr('level-'+lvl.level+'-'+lvl.attempt); }
+  else if(play==='daily'){ ds=dailyState(); dr=ds.done?4:ds.round; D=DAILY[dr]; mode='free'; base=hashStr('daily-'+ds.date+'-'+dr); }
+  else { D=LEVELS[settings.level]; mode=settings.mode; base=Math.floor(Math.random()*1e9); }
+  const count=mode==='spots'?D.spots:1;
+  let seed, rand, d, pts=null;
+  for(let tries=0; !pts && tries<8; tries++){
+    seed=(base+tries*7919)>>>0; rand=mulberry32(seed);
+    S={phase:'guess', eLast:S.eLast, mode, play, dr, picked:-1, guess:null, yaw:0, hidden:false, pts:[]};
+    if(play==='eryri'||play==='orient'){ genReal(ERYC[D.id],rand); S.gridE=(REAL.Ec-HALF)/100; S.gridN=(REAL.Nc-HALF)/100; }
+    else {
+      REAL=null; lakes=[]; cliffs=[]; rails=[]; rockP=[]; woodP=[]; places=[]; pathPts=[]; N=161; SIZE=1200; HALF=SIZE/2; CS=SIZE/(N-1);
+      S.gridE=10+Math.floor(rand()*80); S.gridN=10+Math.floor(rand()*80);
+      genTerrain(rand);
+    }
+    let wk=D.weathers[Math.floor(rand()*D.weathers.length)];
+    if(wk==='lowcloud'&&maxH<55) wk='overcast';
+    S.wx=WEATHERS[wk];
+    WX={maxD:S.wx.maxD, cloud: wk==='lowcloud'?(REAL?REAL.minH+(maxH-REAL.minH)*(0.55+0.25*rand()):LAND+maxH*(0.5+0.2*rand())):1e9, farD: wk==='mist'?110:(REAL?380:220)};
+    d = rand()<(D.anyP!=null?D.anyP:(D.any?1:0)) ? DIRS[Math.floor(rand()*4)] : DIRS[0];
+    S.deg=d.deg; S.dir=d;
+    pts= mode==='orient' ? orientCourse(rand,tries>=4) : pickPoints(rand,count,d.deg,tries<7);
+  }
+  if(!pts){ $('#status').innerHTML=`<b>${tx('oFail')}</b>`; return; }
+  const truePt=pts[0]; S.truePos=truePt;
+  for(let k=pts.length-1;k>0;k--){const r=Math.floor(rand()*(k+1));[pts[k],pts[r]]=[pts[r],pts[k]];}
+  S.pts = mode==='spots' ? pts : []; S.trueIdx=pts.indexOf(truePt);
+  $('#seedTxt').textContent=REAL?gridRef(0,0).split(' ')[0]+' '+String(Math.floor(REAL.Ec%100000/1000))+String(Math.floor(REAL.Nc%100000/1000)):'Tir #'+seed.toString(36);
+  $('#credits').hidden=!REAL;
+  $('#status').innerHTML= mode==='spots' ? '<small>Pa fan sy’n rhoi’r olygfa hon?</small>' : '<small>Rho dy ddyfaliad unrhyw le ar y map.</small>';
+  $('#cover').style.display='none';
+  const has={water:shore.length>0,river:rivers.length>0,road:roads.length>0,conifer:trees.some(t=>t.t==='c'),broadleaf:trees.some(t=>t.t==='d'),boulders:boulders.length>0,spot:spots.length>0,wall:walls.length>0,building:buildings.length>0,footpath:footpaths.length>0,power:!!power,trig:!!trig,crag:hasCrag,cliff:cliffs.length>0,scree:rockP.length>0,rail:rails.length>0};
+  if(REAL){ has.water=lakes.length>0; has.conifer=woodP.some(w=>w.t==='c'); has.broadleaf=woodP.some(w=>w.t==='d'); has.boulders=false; }
+  document.querySelectorAll('.key [data-k]').forEach(el=>{el.style.display=has[el.dataset.k]?'':'none';});
+  S.saz = S.wx===WEATHERS.evening ? (rand()<0.5?0.5:-0.5)*Math.PI+(rand()-.5)*0.8 : rand()*Math.PI*2;
+  if(renderer){ buildScene(rand); applyWeather(rand); }
+  vmsg('');   // a round is ready: clear any loading message else $('#wxTag').textContent=S.wx.name;
+  viewFrom(truePt.x,truePt.z);
+  drawMap(); updateChoices(); setTag(); updateStats(); updateTop();
+  if(mode==='orient'){
+    if(LH0===null) LH0=$('#lookHint').textContent; $('#lookHint').textContent=tx('oHint');
+    S.phase='course'; S.ci=0; S.otime=0; S.splits=[]; S.lastPunch=0; S.route=[[truePt.x,truePt.z]]; S.pitch=S.pitch0=-3;
+    const f=S.oc.ctrls[0]; S.yaw=S.oc.show?brg(truePt.x,truePt.z,f[0],f[1]):0;
+    placeCamera(); kiteVis(); $('#status').innerHTML=`<small>${tx('oIntro')}</small>`; updateChoices(); updateCompass(); drawMap(); updateTop(); return;
+  } else if(LH0!==null) $('#lookHint').textContent=LH0;
+  if(play==='daily'&&ds.done){ S.guess=ds.guesses[4]; showDailySummary(ds); reveal(); }
+  else startTimer();
+}
+function buildSeg(el,opts,key){
+  el.innerHTML='';
+  opts.forEach(([val,label])=>{const b=document.createElement('button'); b.textContent=label; b.setAttribute('aria-pressed',String(settings[key]===val));
+    b.onclick=()=>{settings[key]=val;save();buildSeg(el,opts,key);newRound();}; el.appendChild(b);});
+}
+$('#mapBox').addEventListener('click',e=>{   // on the box: while zoomed the box holds the pointer, so clicks land here
+  if(!S.truePos||e.target.closest('button')) return;
+  if(MZ.moved){ MZ.moved=false; return; }
+  const cvEl=$('#map'), cvw=cvEl.clientWidth, r=cvEl.getBoundingClientRect(), px=(e.clientX-r.left)*cvw/r.width, py=(e.clientY-r.top)*cvw/r.height;
+  const [wx,wz]=p2w(px,py), inside=Math.abs(wx)<=HALF&&Math.abs(wz)<=HALF;
+  if(CMP.on){ if(!inside) return; if(!CMP.a||CMP.b){ CMP.a=[wx,wz]; CMP.b=null; } else CMP.b=[wx,wz]; drawMap(); return; }
+  if(S.play==='orient') return;
+  let best=-1,bd=26; if(S.mode==='spots') markerLayout().forEach(({p,b},i)=>{const dd=Math.min(Math.hypot(p[0]-px,p[1]-py),Math.hypot(b[0]-px,b[1]-py));if(dd<bd){bd=dd;best=i;}});
+  if(S.phase==='guess'){
+    if(S.mode==='spots'){ if(best>=0) choose(best); }
+    else if(inside){ S.guess={x:wx,z:wz}; drawMap(); updateChoices(); }
+  } else {
+    if(best>=0) viewFrom(S.pts[best].x,S.pts[best].z);
+    else if(inside&&hAt(wx,wz)>0.5) viewFrom(wx,wz);
+    else return;
+    drawMap(); updateChoices(); setTag();
+  }
+});
+(()=>{   // pinch / drag / wheel on the map box
+  const box=$('#mapBox'), pts=new Map(); let st=null;
+  const loc=e=>{ const r=box.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; };
+  const two=()=>{ const [a,b]=[...pts.values()]; return {d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,c:[(a[0]+b[0])/2,(a[1]+b[1])/2]}; };
+  box.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button')) return;
+    pts.set(e.pointerId,loc(e)); if(pts.size===1) MZ.moved=false;
+    if(pts.size===2){ const t=two(); st={d:t.d,c:t.c,z:MZ.z,tx:MZ.tx,ty:MZ.ty}; }
+    else st={p:loc(e),tx:MZ.tx,ty:MZ.ty};
+    if(MZ.z>1.001||pts.size>1){ try{ box.setPointerCapture(e.pointerId); }catch(_){} }
+  });
+  box.addEventListener('pointermove',e=>{
+    if(!pts.has(e.pointerId)) return; pts.set(e.pointerId,loc(e));
+    if(pts.size>=2&&st&&st.d){ const t=two(), z1=Math.min(ZMAX,Math.max(1,st.z*t.d/st.d));
+      MZ.tx=t.c[0]-(st.c[0]-st.tx)*z1/st.z; MZ.ty=t.c[1]-(st.c[1]-st.ty)*z1/st.z; MZ.z=z1; MZ.moved=true; mapApply(); }
+    else if(pts.size===1&&MZ.z>1.001&&st&&st.p){ const p=loc(e), dx=p[0]-st.p[0], dy=p[1]-st.p[1];
+      if(!MZ.moved&&Math.hypot(dx,dy)>6) MZ.moved=true;
+      if(MZ.moved){ MZ.tx=st.tx+dx; MZ.ty=st.ty+dy; mapApply(); } }
+  });
+  const up=e=>{ if(!pts.delete(e.pointerId)) return;
+    if(pts.size===1){ st={p:[...pts.values()][0],tx:MZ.tx,ty:MZ.ty}; }
+    else if(!pts.size){ st=null; if(MZ.moved) mapSharpen(); } };
+  box.addEventListener('pointerup',up); box.addEventListener('pointercancel',up);
+  box.addEventListener('wheel',e=>{ if(!(e.ctrlKey||e.metaKey)&&MZ.z<=1.001) return; e.preventDefault();
+    const [x,y]=loc(e); zoomAt(Math.exp(-e.deltaY*(e.ctrlKey?0.012:0.0025)),x,y); },{passive:false});
+  for(const ev of ['gesturestart','gesturechange']) box.addEventListener(ev,e=>e.preventDefault());   // Safari: keep pinches on the map
+  const mid=()=>{ const W=$('#map').clientWidth; return [W/2,W/2]; };
+  $('#zCompass').onclick=()=>{ CMP.on=!CMP.on; CMP.a=CMP.b=null; $('#zCompass').setAttribute('aria-pressed',String(CMP.on)); updateCompass(); drawMap(); viewLabels(); };
+  $('#zIn').onclick=()=>zoomAt(1.6,...mid()); $('#zOut').onclick=()=>zoomAt(1/1.6,...mid()); $('#zReset').onclick=()=>{ mapReset(); drawMap(); };
+  mapApply();
+})();
+// look around by dragging the view
+(()=>{
+  const v=$('#view'); let drag=null;
+  v.addEventListener('pointerdown',e=>{ if(!canLook()||e.target.closest('button')) return; drag={x:e.clientX,y:e.clientY,yaw:S.yaw,p:S.pitch,id:e.pointerId}; try{v.setPointerCapture(e.pointerId);}catch(_){} });
+  v.addEventListener('pointermove',e=>{ if(!drag) return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.abs(dx)>3||Math.abs(dy)>3) S.dragged=true;
+    S.yaw=drag.yaw-dx*HFOV/v.clientWidth; S.pitch=Math.max(-60,Math.min(35,drag.p+dy*camera.fov/v.clientHeight)); placeCamera(); if(S.phase==='revealed') drawMap(); });
+  const end=e=>{ if(drag){ const tap=S.play==='orient'&&e&&e.type==='pointerup'&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<8;
+    if(tap){ S.yaw=drag.yaw; S.pitch=drag.p; placeCamera(); } drag=null; drawMap(); if(tap) orientTap(e.clientX,e.clientY); } };
+  v.addEventListener('pointerup',end); v.addEventListener('pointercancel',end);
+  $('#resetView').addEventListener('click',()=>{ S.yaw=0; if(S.pitch0!=null) S.pitch=S.pitch0; placeCamera(); drawMap(); });
+})();
+function fmtDate(key){ const [y,m,d]=key.split('-').map(Number); return d+' '+['Ion','Chwef','Maw','Ebr','Mai','Meh','Gorff','Awst','Medi','Hyd','Tach','Rhag'][m-1]+' '+y; }
+function showDailySummary(ds){
+  const tot=ds.scores.reduce((a,b)=>a+b,0), tiles=ds.scores.map(tile).join('');
+  const rows=ds.scores.map((p,k)=>`<tr><td>Rownd ${k+1}</td><td>${tile(p)}</td><td>${ds.dists[k]} m</td><td>${p} pwynt</td></tr>`).join('');
+  $('#status').innerHTML=`<div class="daily-sum"><small>Pos dyddiol, ${fmtDate(ds.date)}</small><div class="tot">${tot} / 500</div><div class="tiles">${tiles}</div><table>${rows}</table>
+    <button class="sharebtn" id="shareBtn" type="button">Rhannu’r canlyniad</button><small id="shareMsg">Mae pos newydd yn cyrraedd am hanner nos. Rwyt ti’n edrych ar rownd 5.</small></div>`;
+  $('#shareBtn').onclick=async()=>{
+    const url=location.href.split(/[?#]/)[0];
+    const text=`Ble wyt ti? Dyddiol, ${fmtDate(ds.date)}\n${tiles} ${tot}/500\n${url}`;
+    if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+    try{ await navigator.clipboard.writeText(text); $('#shareMsg').textContent='Wedi’i gopïo — gludia fe unrhyw le.'; }
+    catch(e){ $('#shareMsg').style.whiteSpace='pre-line'; $('#shareMsg').textContent=text; }
+  };
+}
+function updateTop(){
+  const play=settings.play;
+  $('#ansWrap').style.display=(play==='unlimited'||play==='eryri')?'':'none';
+  $('#lvlWrap').style.display=(play==='unlimited'||play==='eryri')?'':'none';
+  $('#oposWrap').style.display=play==='orient'?'':'none';
+  const mi=$('#modeInfo'), nx=$('#next'), rev=S.phase==='revealed';
+  mi.style.display=play==='unlimited'?'none':'';
+  if(play==='orient'){ const L=OLV[olv.cur-1], P=ERY.find(e=>e.id===L.place);
+    const opts=OLV.slice(0,olv.open).map((l,k)=>`<option value="${k+1}"${k+1===olv.cur?' selected':''}>${k+1}. ${ERY.find(e=>e.id===l.place).name}${olv.stars[k+1]?' '+'★'.repeat(olv.stars[k+1]):''}</option>`).join('');
+    mi.innerHTML=`<b>${tx('oLevel',{n:olv.cur})}</b><span>${P.name} · ${oShow(L)?tx('oShown'):tx('oHidden')}</span>`+(olv.open>1?`<select id="oPick">${opts}</select>`:'');
+    const pk=$('#oPick'); if(pk) pk.onchange=()=>{ olv.cur=+pk.value; store('way-orient',olv); S.oAdvance=false; newRound(); };
+    nx.textContent = S.phase==='done' ? (olv.cur<OLV.length?tx('oNext',{n:olv.cur+1}):tx('oAgain')) : tx('oRestart'); nx.disabled=false; return; }
+  if(play==='eryri'){
+    const cur=ERY.find(e=>e.id===S.eLast), opts=`<option value="random"${settings.eplace==='random'?' selected':''}>Lle ar hap</option>`+ERY.map(e=>`<option value="${e.id}"${settings.eplace===e.id?' selected':''}>${e.name}${estats.seen[e.id]?' ✓':''}</option>`).join('');
+    mi.innerHTML=`<b>${cur?cur.name:''}</b><select id="eryPick" aria-label="Dewis lle yn Eryri">${opts}</select>`;
+    const pk=$('#eryPick'); pk.onchange=()=>{ settings.eplace=pk.value; save(); S.phase=null; newRound(); };
+    nx.textContent = settings.eplace==='random' ? 'Lle newydd' : 'Golygfa newydd'; nx.disabled=false;
+  } else if(play==='levels'){
+    const shown = rev&&S.passed ? lvl.level-1 : lvl.level;
+    mi.innerHTML=`<b>Lefel ${shown}</b><span>${D.spots} man${lvl.best>1?`, gorau ${lvl.best}`:''}</span><button class="linkbtn" id="restartLv" type="button">${lvl.level>1?'Ailddechrau':''}</button>`;
+    const rb=$('#restartLv'); if(rb) rb.onclick=()=>{ if(rb.dataset.arm){ lvl={level:1,best:lvl.best,attempt:0}; store('way-levels',lvl); newRound(); } else { rb.dataset.arm=1; rb.textContent='Tapia eto i ailddechrau o lefel 1'; setTimeout(()=>{ if(rb.isConnected){ delete rb.dataset.arm; rb.textContent='Ailddechrau'; } },3000); } };
+    nx.textContent = !rev ? 'Gwna dy ddyfaliad' : S.passed ? `Nesaf: lefel ${lvl.level}` : 'Rho gynnig arall';
+    nx.disabled=!rev;
+  } else if(play==='daily'){
+    const ds=dailyState(), tot=ds.scores.reduce((a,b)=>a+b,0);
+    mi.innerHTML=`<b>Dyddiol, ${fmtDate(ds.date)}</b><span>${ds.done?'Wedi gorffen':`Rownd ${Math.min(5,S.dr+1)} o 5`}, ${tot} pwynt</span>`;
+    nx.textContent = ds.done ? 'Tyrd yn ôl yfory' : !rev ? `Rownd ${S.dr+1} o 5` : 'Rownd nesaf';
+    nx.disabled = ds.done || !rev;
+  } else { nx.textContent='Tir newydd'; nx.disabled=false; }
+}
+function buildTabs(){
+  const el=$('#playTabs'); el.innerHTML='';
+  [['levels','Lefelau','Anos gyda phob lefel'],['eryri','Eryri','Lleoedd go iawn, ar hap'],['orient','Cyfeiriannu','Dod o hyd i’r pwyntiau'],['daily','Dyddiol','Yr un pos i bawb'],['unlimited','Diderfyn','Dewis dy osodiadau dy hun']].forEach(([v,l,sub])=>{
+    const b=document.createElement('button'); b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected',String(settings.play===v));
+    b.innerHTML=`${l}<small>${sub}</small>`; b.onclick=()=>{ if(settings.play===v) return; settings.play=v; save(); buildTabs(); newRound(); }; el.appendChild(b);
+  });
+}
+$('#next').onclick=()=>{ if(!$('#next').disabled) newRound(); };
+document.addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey||(e.target.closest&&e.target.closest('input,textarea,select'))) return;
+  const k=e.key;
+  if($('#pop').classList.contains('on')){ if(k==='Escape'){ hidePop(); e.preventDefault(); } return; }
+  if((k==='ArrowUp'||k==='ArrowDown')&&canLook()){ S.pitch=Math.max(-60,Math.min(35,S.pitch+(k==='ArrowUp'?4:-4))); S.dragged=true; placeCamera(); e.preventDefault(); return; }
+  if((k==='ArrowLeft'||k==='ArrowRight')&&canLook()){ S.yaw+=(k==='ArrowLeft'?-5:5)*(e.shiftKey?3:1); S.dragged=true; placeCamera(); if(S.phase==='revealed') drawMap(); e.preventDefault(); return; }
+  if(k==='Home'&&canLook()){ S.yaw=0; placeCamera(); drawMap(); return; }
+  if(k==='n'||k==='N'){ $('#next').click(); return; }
+  if(k==='c'||k==='C'){ $('#zCompass').click(); return; }
+  if(k==='Escape'&&CMP.on&&CMP.a){ CMP.a=CMP.b=null; drawMap(); return; }
+  if(k==='+'||k==='='){ $('#zIn').click(); return; } if(k==='-'||k==='_'){ $('#zOut').click(); return; }
+  if(S.phase==='guess'&&S.mode==='spots'){ const i=LETTERS.indexOf(k.toUpperCase()); if(i>=0&&i<S.pts.length){ choose(i); } return; }
+  if(k==='Enter'&&S.phase==='guess'&&S.mode==='free'&&S.guess){ confirmGuess(); }
+});
+if(window.matchMedia&&matchMedia('(hover:hover) and (pointer:fine)').matches) $('#lookHint').textContent='Llusga neu defnyddia ← → i edrych o gwmpas';
+const PWA=true;   // the website registers a service worker so the game works offline
+if(PWA&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+$('#namesBtn').onclick=()=>{ settings.names=!settings.names; save(); viewLabels(); };
+(function(){ const a=$('#langLink'); if(!a) return; a.addEventListener('click',()=>store('way-lang',a.hreflang));
+  // first visit with a Welsh-language browser: open the Welsh version
+  try{ if(false&&!localStorage.getItem('way-lang')&&a.hreflang==='cy'&&/^cy\b/i.test(navigator.language||'')){ store('way-lang','cy'); location.replace(a.href); } }catch(e){}
+})();
+buildTabs();
+buildSeg($('#modeSeg'),[['spots','Mannau'],['free','Unrhyw le']],'mode');
+(function oposSeg(){   // changes straight away, without restarting the course
+  const el=$('#oposSeg'); el.innerHTML='';
+  [["level", "Yn ôl y cwrs"], ["on", "Bob amser"], ["off", "Byth"]].forEach(([v,l])=>{ const b=document.createElement('button'); b.type='button'; b.textContent=l; b.setAttribute('aria-pressed',String((settings.opos||'level')===v));
+    b.onclick=()=>{ settings.opos=v; save(); oposSeg(); if(S.play==='orient'&&S.oc&&OL){ S.oc.show=oShow(OL); kiteVis(); drawMap(); updateChoices(); updateTop(); } }; el.appendChild(b); });
+})();
+buildSeg($('#levelSeg'),[['easy','Hawdd'],['medium','Canolig'],['hard','Anodd'],['expert','Arbenigol']],'level');
+try{ if(!window.THREE) throw new Error('no three'); initThree(); }
+catch(e){ renderer=null; const er=$('#err'); er.dataset.fatal='1'; er.style.display='grid'; er.textContent='Methodd yr olygfa 3D â llwytho. Gwiria dy gysylltiad ac ail-lwytha’r dudalen.'; }
+let rt; const onResize=()=>{clearTimeout(rt);rt=setTimeout(()=>{render();mapApply();drawMap();},60);};
+if(window.ResizeObserver) new ResizeObserver(onResize).observe($('#view')); else window.addEventListener('resize',onResize);
+try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{render();drawMap();}); }catch(e){}
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>drawMap());
+newRound();
+})();
+</script>
+</body>
+</html>
