@@ -52,16 +52,12 @@ def enc_poly(p, tol=1.5):
     r=[ring(p.exterior.coords)]+[ring(i.coords) for i in p.interiors if Polygon(i).area>50]
     return r if len(r[0])>=6 else None
 
-FIX={'Cadair Idris':'Penygadair','Carnedd Y Filiast':'Carnedd y Filiast','Pen Yr Ole Wen':'Pen yr Ole Wen','Castell Y Gwynt':'Castell y Gwynt','Pen Y Bigil':'Pen y Bigil','Y Lliwedd (West Peak)':'Y Lliwedd','Y Lliwedd (East Peak)':'Lliwedd Dwyreiniol','Carreg Blaen-Llym':'Carreg Blaen-llym','Mynydd Drws-Y-Coed':'Mynydd Drws-y-coed','Llyn y Cwn':'Llyn y Cŵn'}
+FIX={'Cadair Idris':'Penygadair','Carnedd Y Filiast':'Carnedd y Filiast','Pen Yr Ole Wen':'Pen yr Ole Wen','Castell Y Gwynt':'Castell y Gwynt','Pen Y Bigil':'Pen y Bigil','Y Lliwedd (West Peak)':'Y Lliwedd','Y Lliwedd (East Peak)':'Lliwedd Dwyreiniol','Carreg Blaen-Llym':'Carreg Blaen-llym','Mynydd Drws-Y-Coed':'Mynydd Drws-y-coed'}
 import re
 def welsh(t):
     n=t.get('name:cy') or t.get('name')
     if not n: return n
     n=FIX.get(n,n)
-    # OpenStreetMap sometimes carries English qualifiers on Welsh names: turn them into Welsh
-    for en,cy in ((' North Top',' (copa’r gogledd)'),(' South Top',' (copa’r de)'),(' East Top',' (copa’r dwyrain)'),(' West Top',' (copa’r gorllewin)'),
-                  (' NW Top',' (copa’r gogledd-orllewin)'),(' NE Top',' (copa’r gogledd-ddwyrain)'),(' SW Top',' (copa’r de-orllewin)'),(' SE Top',' (copa’r de-ddwyrain)'),(' North Peak',' (copa’r gogledd)'),(' South Peak',' (copa’r de)'),(' Reservoir','')):
-        if n.endswith(en): n=n[:-len(en)]+cy
     return re.sub(r'(?<=[ -])(Y|Yr)(?=[ -])',lambda m:m.group(1).lower(),n)   # Trum Y Ddysgl -> Trum y Ddysgl
 _EX='cache/bfed0f20bf55463429ed03e0b72cd23c.json'
 EXTRA=[e for e in json.load(open(_EX))['elements'] if e.get('tags',{}).get('natural')=='peak'] if os.path.exists(_EX) else []
@@ -116,7 +112,7 @@ def surround(L,cg,flat,half=6000):
     xs=np.arange(n)*step-half; X,Z=np.meshgrid(xs,xs)
     m=np.zeros((n,n),np.uint8); m[flat]=1
     fn=os.path.join(os.path.dirname(os.path.abspath(__file__)),'osm_local',L['id']+'_wide.json')
-    if not os.path.exists(fn): return cg,m,[]
+    if not os.path.exists(fn): return cg,m
     els=json.load(open(fn))['elements']; cg=cg.copy()
     def cells(P):
         a,b,c,d=P.bounds
@@ -137,41 +133,15 @@ def surround(L,cg,flat,half=6000):
             for p in flat_polys(P):
                 c=cells(p)
                 if c is not None: m[c&(m==0)]=k
-    labs=[]   # [name, x, z, height, kind 0=peak 1=lake, size] for naming what's in view after a guess
-    for el in els:
-        t=el.get('tags',{})
-        if el['type']=='node' and t.get('natural')=='peak' and welsh(t):
-            x,z=xz([el],L)[0]
-            if max(abs(x),abs(z))>half-100: continue
-            try: e=float(str(t.get('ele')).replace('m','').split(';')[0])
-            except: e=None
-            if e is None:
-                i,j=int(round((x+half)/step)),int(round((z+half)/step)); e=float(cg[j,i])
-            labs.append([welsh(t),round(x),round(z),round(e),0,0])
     nl=0
     for el in water:
-        t=el.get('tags',{}); nm=welsh(t)
-        if nm and not re.search(r'(?i)holiday|\blake\b|\bpond\b|fishery|\bpark\b|\bpool\b',nm):   # skip English leisure-pond names
-            ps=[p for P in polys_of(el,L) for p in flat_polys(P)]
-            if ps:
-                big=max(ps,key=lambda a:a.area); a=sum(p.area for p in ps)
-                pp=big.representative_point()
-                if a>=20000 and max(abs(pp.x),abs(pp.y))<half-100: labs.append([nm,round(pp.x),round(pp.y),0,1,round(a)])
         for P in polys_of(el,L):
             for p in flat_polys(P):
                 if p.area<4000: continue
                 c=cells(p)
                 if c is None: continue
                 lvl=float(np.percentile(cg[c],30)); cg[c]=np.minimum(cg[c],lvl); m[c]=1; nl+=1
-    # lake label heights: the flattened surface under the label point
-    for l in labs:
-        if l[4]==1:
-            i,j=int(round((l[1]+half)/step)),int(round((l[2]+half)/step)); l[3]=round(float(cg[j,i]),1)
-    seen=set(); out=[]
-    for l in sorted(labs,key=lambda l:(l[4],-l[3] if l[4]==0 else -l[5])):
-        if l[0] in seen: continue
-        seen.add(l[0]); out.append(l)
-    return cg,m,out
+    return cg,m
 
 def do_level(L):
     fg,_=fine_grid(L['Ec'],L['Nc'])
@@ -180,11 +150,11 @@ def do_level(L):
     from scipy.ndimage import maximum_filter, minimum_filter, binary_opening
     rng=maximum_filter(cg,3)-minimum_filter(cg,3)
     flat=binary_opening(rng<0.05, iterations=1)&(cg<=1.0)   # sea / beyond the LiDAR edge
-    cg,cmask,far=surround(L,cg,flat)
+    cg,cmask=surround(L,cg,flat)
     D=dict(id=L['id'],name=L['name'],sub=L['sub'],Ec=L['Ec'],Nc=L['Nc'],half=750,n=fg.shape[0],
            hmin=round(float(fg.min()),1), h=deltas(fg-round(float(fg.min()),1),10),
            c=dict(half=6000,n=cg.shape[0],hmin=round(float(cg.min()),1),h=deltas(cg-round(float(cg.min()),1),10),
-                  m=rle(cmask)),far=far,
+                  m=rle(cmask)),
            lakes=[],streams=[],paths=[],roads=[],rails=[],walls=[],woods=[],buildings=[],cliffs=[],rock=[],peaks=[],trigs=[],places=[])
     j=cached_osm(L)
     if j is None:

@@ -65,6 +65,5 @@ if __name__ == '__main__':
     res = extract(pbf, boxes)
     for k, j in res.items():
         if k.endswith('_wide'):  # only water + forest for the 12 km surround
-            j['elements'] = [e for e in j['elements'] if (e['type'] != 'node' and (e['tags'].get('natural') in ('water', 'wood') or e['tags'].get('landuse') in ('forest', 'reservoir')))
-                             or (e['type'] == 'node' and e['tags'].get('natural') == 'peak' and e['tags'].get('name'))]   # named peaks label the view
+            j['elements'] = [e for e in j['elements'] if e['type'] != 'node' and (e['tags'].get('natural') in ('water', 'wood') or e['tags'].get('landuse') in ('forest', 'reservoir'))]
         json.dump(j, open(f'osm_local/{k}.json', 'w')); print(k, len(j['elements']))

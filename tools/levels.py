@@ -1,4 +1,4 @@
-# All Eryri places. The game picks them at random; ids are used for the per-place data files.
+# All Eryri levels, easiest -> hardest. The game stores progress by id, so reordering is safe.
 # Centres: OS easting/northing ending in 50 so the 1.5 km square lines up with the 100 m grid.
 LEVELS=[
  dict(id='padarn',     name='Llyn Padarn',                    sub='Llanberis',        Ec=257150, Nc=361350),
@@ -21,17 +21,4 @@ LEVELS=[
  dict(id='aran',       name='Aran Fawddwy',                   sub='Aran',             Ec=286250, Nc=322450),
  dict(id='cribgoch',   name='Crib Goch',                      sub='Crib Goch',        Ec=262450, Nc=355250),
  dict(id='carneddau',  name='Y Carneddau',                    sub='Carneddau plateau',Ec=268350, Nc=365050),
- dict(id='rhinogfawr', name='Rhinog Fawr a Llyn Du',          sub='Rhinogydd',        Ec=265650, Nc=329250),
- dict(id='llynhywel',  name='Llyn Hywel a Rhinog Fach',       sub='Rhinogydd',        Ec=266350, Nc=326450),
- dict(id='bodlyn',     name='Llyn Bodlyn a Diffwys',          sub='Rhinogydd',        Ec=265450, Nc=323750),
- dict(id='arenig',     name='Arenig Fawr',                    sub='Arenig',           Ec=283250, Nc=337350),
- dict(id='moelhebog',  name='Moel Hebog',                     sub='Beddgelert',       Ec=256450, Nc=346950),
- dict(id='cwmsilyn',   name='Cwm Silyn',                      sub='Nantlle',          Ec=252050, Nc=350450),
- dict(id='moeleilio',  name='Moel Eilio',                     sub='Llanberis',        Ec=255550, Nc=357750),
- dict(id='dinas',      name='Llyn Dinas',                     sub='Nant Gwynant',     Ec=261750, Nc=349550),
- dict(id='llagi',      name='Llyn Llagi a Llyn yr Adar',      sub='Nant Gwynant',     Ec=265250, Nc=348150),
- dict(id='glyderfawr', name='Glyder Fawr a Llyn y Cŵn',       sub='Glyderau',         Ec=264050, Nc=358050),
- dict(id='dafydd',     name='Carnedd Dafydd a Ffynnon Lloer', sub='Carneddau',        Ec=266250, Nc=362550),
- dict(id='cowlyd',     name='Llyn Cowlyd',                    sub='Carneddau',        Ec=272650, Nc=362250),
- dict(id='eigiau',     name='Llyn Eigiau',                    sub='Carneddau',        Ec=271950, Nc=365050),
 ]
