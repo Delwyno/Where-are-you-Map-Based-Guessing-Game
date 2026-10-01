@@ -2,6 +2,8 @@
 
 A map-reading game. Study a 3D view of the hills, then work out where on the contour map you're standing. It includes real Eryri (Snowdonia) terrain, an orienteering mode and a full Welsh-language version.
 
+https://github.com/user-attachments/assets/c6e6f1f3-2b33-4516-b605-4f21acb957e7
+
 **Play:** https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/
 **Chwarae yn Gymraeg:** https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/cy.html
 
