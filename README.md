@@ -1,99 +1,233 @@
-# Where are you? · Ble wyt ti?
+# The UK Power Flow · Llif Pŵer y DU
 
-A map-reading game. Study a 3D view of the hills, then work out where on the contour map you're standing. It includes real Eryri (Snowdonia) terrain, an orienteering mode and a full Welsh-language version.
+An interactive, bilingual (English and Welsh) map of Britain's electricity system. It shows where power is generated, the grid it travels along, where it is used, what flows in and out through interconnectors, and what is coming next.
 
-https://github.com/user-attachments/assets/654255df-06b4-4039-b5cb-7026afc611b3
+The map is a single self-contained web page (`index.html`). The `src/`, `data/` and `tools/` folders are what `index.html` is built from, plus the scripts that keep its data fresh.
 
-**Play:** https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/
-**Chwarae yn Gymraeg:** https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/cy.html
+## What it shows
 
-It works on phones and computers, can be added to your home screen, and plays offline once it has been opened once.
+**Map tab**
+- **Major sites.** Around 90 power stations, interconnectors and grid links, each with capacity, status and dates. Each has a route showing where its electricity typically goes, drawn along real 400 kV and 275 kV pylon lines.
+- **Smaller generators.** About 2,600 more from OpenStreetMap appear when you zoom in, including about 270 in Wales.
+- **Year slider (2026–2040).** Planned projects such as Wylfa, Hinkley Point C and Sizewell C switch on, and older nuclear stations close.
+- **Grid infrastructure layer.** Lines coloured by voltage, about 400 substations and offshore wind farm areas. Tapping a substation shows which mapped power stations route through it.
+- **Wales view.** Welsh capacity, the latest Welsh generation mix, and the links out of Wales.
+- **Postcode check** (hosted version only). Local carbon intensity, the cleanest time in the next 24 hours, and the nearest sites.
+- **Sources and checks.** Every site shows its sources, with a badge showing whether its capacity has been cross-checked against OpenStreetMap.
 
-## Ways to play
+**Carbon intensity tab**
+- Right now, today's average and this year so far.
+- A half-hourly chart: the last 24 hours and the next 48.
+- History since 2009 with the Clean Power 2030 pathway, plus the carbon intensity of imports by country.
 
-| Tab | What it is |
-|---|---|
-| **Levels** | Generated terrain that gets harder each level: more spots, look-alike views, fog and timers. |
-| **Eryri** | 33 real places in Eryri, picked at random. Choose lettered **Spots** or **Anywhere** (drop a pin, scored by distance), and a difficulty from Easy to Expert. |
-| **Orienteering** | 20 courses on generated hills. Visit the controls in order by tapping the ground in the 3D view to move (up to 150 m per jump). Your time comes from a hill-walking pace model, so route choice matters. You get stars against par, split times, and your route drawn on the map at the end. |
-| **Daily** | Five rounds, the same for everyone each day, with a shareable result. |
-| **Unlimited** | Generated terrain with your own settings. |
+**Stories tab**
+- Where electricity is cleanest right now, with the 14 regions shaded on the map.
+- Hours at the 2030 clean power level.
+- Wind that can't get south (live curtailment).
+- The grid connection queue.
+- Clean hours are cheap hours (carbon against wholesale price).
 
-### Orienteering
+**Why now.** The Map and Carbon tabs explain whether carbon intensity is higher or lower than typical for the month and time of day, and which sources are driving the difference. "Typical" comes from the last two years of NESO's historic generation mix.
 
-- Controls sit on features you can find from the map: path junctions, summits, knolls, wall corners, stream junctions, stream crossings and path bends. Each control has a written clue.
-- You punch a control by getting within 8 m of its orange-and-white kite. Passing that close during a jump also counts.
-- You can't jump across water, through buildings, up ground steeper than about 50°, or further than 150 m.
-- **My position:** show your position *by course* (shown on courses 1–5, hidden from 6), *always* or *never*. When it's hidden, "Where am I?" shows it for 5 seconds at a 30-second penalty.
-- Weather gets harder through the ladder, from clear days to thick mist.
+**Curtailment.** Wind farms being turned down show the megawatts, the estimated payment (from Elexon bid prices) and the extra CO₂ from replacing that power with gas. A scenario block in Stories estimates how much of today's curtailed Scottish wind Eastern Green Link 1 and 2 could carry south.
 
-## Controls
+**Plan tab.** "When to run it" finds the cleanest time to run a flexible load (EV charging, a kiln, a cold store) in any region over the next 48 hours, shows the CO₂ saved compared with starting now, and can add the best window to a calendar.
 
-| | Phone | Computer |
+**Future tab.** Two views, switched at the top. **2030 simulator:** a simulator that replays every hour of 2024's real weather and demand with the capacities you choose (offshore and onshore wind, solar, nuclear, batteries, long-duration storage, interconnectors, new low-carbon plant and demand growth). It shows whether the system meets the Clean Power 2030 goal of 95% clean generation, how much gas it still needs, the longest gas-heavy spell and how much wind and solar would be turned down. Green bands on the sliders show the government's 2030 plan, and a model check compares the replayed base year with what actually happened.
+
+**Weekly digest.** The top of Stories summarises the last Monday-to-Sunday week in plain English, with records and a shareable image. Earlier weeks are one tap away.
+
+**Forecast accuracy.** The Carbon tab shows how well NESO's 24-hour forecasts matched reality over the last 30 days, including how often the forecast's cleanest window really was the cleanest.
+
+**How this map works.** One page, in both languages, explains every calculation, estimate and source. It opens from Layers, the Map tab and "How this is calculated" links throughout.
+
+**Curtailment tracker.** Stories shows how much wind was turned down over the last 30 days, what it cost and the extra CO₂, with the wind farms turned down most. The live curtailment box on the Map tab names each wind farm being turned down right now, grouped by region, with a link to each.
+
+**Station history.** Each mapped power station's panel shows its output over the last week, hour by hour, with any turn-down shaded, plus how often it was turned down in the last 30 days.
+
+**Records and milestones.** Stories lists Britain's all-time records (lowest carbon half-hour, cleanest day, longest spell at 50 g or below, highest wind and solar shares) and milestones from the last 30 days. They all come from one dataset, so a record is never an artefact of comparing two measures. Wales has its own row from NESO's regional estimates.
+
+**Share this view.** The share button copies a link that reopens the map exactly as you see it: tab, site or region, year, Wales view, simulator settings or digest week. Link previews on LinkedIn and messaging apps show `social.png`.
+
+**Downloads.** On the published map, every chart's enlarged view has **Download data (CSV)**, and the table downloads as filtered.
+
+**Switch-off prices.** Each tracked wind farm shows its support scheme (Renewables Obligation, a 2014 early Contract for Difference, or an auction CfD) and what it cost per MWh to switch off over the last 30 days. Stories compares the schemes and explains why older ones cost more. Schemes and sources are in `data/subsidy.json`.
+
+**Replay the last 7 days.** From the Map or Stories tab, the map plays back the week hour by hour for every station that reports to Elexon: flows change, wind farms being turned down light up, and a label on the map shows the hour. Pause, scrub or tap the chart to jump.
+
+**Grid queue** (in the Future tab). Every project with a contract to connect to the transmission grid, from NESO's TEC register, shown as circles at each connection site. Totals by technology and contracted year, the longest queues, each site's largest projects, and a Wales-only view.
+
+**Wales in depth.** The Wales view shows progress against the Welsh Government's targets (70% of consumption from renewables by 2030, 100% by 2035), local ownership and heat pumps, recent wind in Wales, Welsh wind farms turned down, and what's queuing to connect in Wales.
+
+**Checked against NESO.** The curtailment tracker compares its wind payments with NESO's official daily thermal constraint costs, with a note on why they differ.
+
+**Hydrogen** (in the Future tab). The first funded hydrogen production projects (the 11 first-round winners), the proposed Project Union East Coast pipeline corridor and the hubs around them, each with its status, date checked and sources. Britain has no national hydrogen network yet, so this shows plans and progress, including projects that have been paused. It is curated by hand in `data/hydrogen.json`; the Wales view has its own hydrogen section. The tab also has an electrolyser what-if that replays each wind farm's real turn-down, and a ranking of where a 50 MW electrolyser would have been busiest.
+
+**Open data.** Ten CSV files, refreshed daily at stable addresses under `data/open/`, with an index describing each (`data/open/index.json`). Linked from "How this map works" and the Layers panel.
+
+**Compare years** (also in the Future tab): pick two years to see capacity by technology side by side, what's new and what closes. You can also highlight the changes on the map: a green ring means new and a red dashed ring means closed.
+
+**Also:**
+- One search box for sites, substations, smaller generators, places, regions and postcodes.
+- A **Layers** panel.
+- A sortable, filterable **Table** of every site.
+- Hover previews on desktop.
+- A draggable information panel on phones.
+- A short first-visit guide, which you can reopen from Layers.
+
+## Folder layout
+
+Everything sits at the top level of the repository:
+
+```
+index.html            the built map: this is what GitHub Pages serves
+README.md
+.nojekyll             tells GitHub Pages to serve files as they are
+.github/workflows/refresh-power-map.yml   automatic data refresh
+src/app.html          page template: layout, styles, code, text in both languages
+src/sites.js          curated sites, interconnectors and grid links (edit these by hand)
+social.png            the picture shown when the link is shared
+data/*.json           datasets (generated by the tools); most are embedded in index.html
+data/plants.json, data/subs.json   smaller generators and substations (load just after the map appears)
+data/sim.json         one year of hourly data for the 2030 simulator (loads when the simulator opens)
+data/accuracy.json    forecast accuracy record (grows daily)
+data/digest.json      weekly digests (one added each week)
+data/daily.json       daily Wales figures from NESO's regional estimates
+data/curtail.json     daily curtailment totals and each wind farm's share (loads when needed)
+data/stations.json    each mapped station's hourly output for the last 14 days (loads when needed)
+data/hydrogen.json    hydrogen projects and pipeline, curated by hand with sources and status dates
+data/subsidy.json     support scheme for each tracked wind farm, with sources (edit by hand)
+data/queue.json       the connection queue by connection site (loads when needed)
+data/constraints.json NESO's daily constraint costs, for the cross-check (loads when needed)
+data/gazetteer.json   named substations and power stations from OpenStreetMap, for placing queue sites
+data/open/            open data: CSV files and index.json
+tools/build.py        assembles index.html from src/ and data/
+tools/update_snapshot.py   refreshes the offline snapshot, forecast accuracy, weekly digest and Wales figures (daily)
+tools/update_elexon.py     refreshes the curtailment tracker and station history from Elexon (daily)
+tools/update_history.py    refreshes carbon history, records and the simulator data from NESO (daily)
+tools/update_osm.py        refreshes grid, substations, smaller sites and routes from OpenStreetMap (monthly)
+tools/update_neso.py       refreshes the connection queue and official constraint costs from the NESO data portal (daily)
+tools/export_open.py       writes the open data CSVs (daily)
+tools/requirements.txt
+```
+
+## Deploying on GitHub Pages
+
+1. Upload `index.html`, `README.md` and the `src`, `data` and `tools` folders to the top level of the repository.
+2. Create `.nojekyll` (empty) and `.github/workflows/refresh-power-map.yml` using **Add file → Create new file**. File names starting with a dot are hidden on most computers, so creating them on GitHub is easiest.
+3. In **Settings → Pages**, set the source to **Deploy from a branch**, branch **main**, folder **/ (root)**.
+4. In **Settings → Actions → General**, set **Workflow permissions** to **Read and write**, so the refresh can commit.
+5. The map will be live at `https://<username>.github.io/<repository-name>/` within a couple of minutes.
+6. To test the refresh, open the **Actions** tab, choose **Refresh UK power map data**, then **Run workflow**. Tick **full** to run everything.
+
+The page loads two things from the internet: D3 (version 7.9.0) from cdnjs, and the Barlow fonts from Google Fonts. It falls back to system fonts if the fonts can't load.
+
+## Keeping the data fresh automatically
+
+The GitHub Action runs on its own:
+
+| When | What it refreshes | Script |
 |---|---|---|
-| Look around | Drag the 3D view (up/down tilts) | Drag, or arrow keys |
-| Move (Orienteering) | Tap the ground | Click the ground |
-| Zoom the map | Pinch, or **+ / −** | Ctrl/⌘ + scroll, trackpad pinch, **+ / −** |
-| Pan the zoomed map | Drag | Drag |
-| Compass: measure a bearing | Compass button, then tap two points | Same, or **C** |
-| Choose a spot | Tap a letter | **A**–**F**, **Enter** to confirm |
-| New round | Button under the title | **N** |
+| Every day, 05:15 UTC | The offline snapshot: national, Welsh and regional mix, today's carbon intensity, import factors. Also saves today's 24-hour forecast, scores earlier ones, and adds last week's digest once the week is over | `update_snapshot.py` |
+| Every day | Yesterday's curtailment and each station's output, read half-hour by half-hour from Elexon (the first run fills in the last week) | `update_elexon.py` |
+| Every day | Carbon history since 2009, records and milestones, and the simulator's hourly year (NESO historic generation mix) | `update_history.py` |
+| Every day | The connection queue (TEC register) and NESO's daily constraint costs; then the open data CSVs | `update_neso.py`, `export_open.py` |
+| 2nd of each month | All of the above, plus lines, substations, smaller sites, wind farm areas, routes and cross-checks (OpenStreetMap UK extract) | `update_osm.py` |
 
-After a guess, the 3D view names the summits and lakes you can see. The **Names** button hides them. With the compass on, each name shows its bearing.
+After refreshing, it rebuilds `index.html` and commits only if something changed. Each step works independently: if one source is down, the previous data is kept and the rest still updates.
 
-## What's in this repo
+GitHub pauses scheduled workflows in repositories with no activity for 60 days. The daily commits normally prevent this, but if the map stops updating, check the Actions tab.
 
-```
-index.html                English version (built from tools/src/page_en.html)
-cy.html                   Welsh version (built from tools/src/page_cy.html)
-eryri/                    one data file per Eryri place (33), loaded when needed
-sw.js                     service worker: saves everything for offline play
-manifest.webmanifest      app details for "Add to Home Screen" (English)
-manifest-cy.webmanifest   app details for "Add to Home Screen" (Cymraeg)
-icon-192.png, icon-512.png
-tools/                    scripts that make the Eryri place data and build the site (see tools/README.md)
-```
+**Running it by hand** (Python 3.10+, Node.js; `osmium-tool` recommended for the OpenStreetMap step):
 
-Everything runs in the browser, with no server code. [three.js](https://threejs.org/) r128 draws the 3D view and is loaded from cdnjs.
-
-### Offline and updates
-
-On the first visit the service worker saves the pages, three.js and all 33 Eryri places in the background (about 3.5 MB to download). After that the game works with no signal, which is handy on the hill.
-
-When you upload new files, open the site once with signal and phones will pick up the new version.
-
-### Running it locally
-
-Open the folder through a local web server rather than double-clicking `index.html`, because browsers block loading the `eryri/` files from `file://`:
-
-```
-python -m http.server 8000
+```bash
+pip install -r tools/requirements.txt
+python tools/update_snapshot.py
+python tools/update_elexon.py
+python tools/update_history.py              # or: --csv df_fuel_ckan.csv
+python tools/update_osm.py                  # or: --pbf united-kingdom-latest.osm.pbf
+python tools/update_neso.py
+python tools/export_open.py
+python tools/build.py                       # or: --inline for one self-contained file
 ```
 
-Then go to http://localhost:8000/.
+**Editing sites.** Change `src/sites.js`, then run `update_osm.py` (to rebuild routes and cross-checks) and `build.py`.
 
-### Changing the game or adding places
+## Live data and snapshot mode
 
-Edit the pages in `tools/src/`, not the built `index.html` and `cy.html`. Then run `python tools/build_site.py` from the top of the repo. How to add an Eryri place is in [tools/README.md](tools/README.md).
+The simulator's data (`data/sim.json`, about 120 KB) is kept out of `index.html` so the map opens quickly. The page fetches it only when someone opens the 2030 tab, so the simulator works on the hosted version only (or build with `python tools/build.py --inline-sim` to embed it).
 
-## Place data
+The page always contains an embedded snapshot, so it works anywhere, including offline and inside sandboxed previews. When it is hosted on its own web address, it also fetches live data every five minutes. Each feed is independent: if one fails, the map uses the snapshot for that part.
 
-Each Eryri place is a 1.5 km square of detailed terrain inside a 12 km surround:
+To see which feeds are working, tap the status pill at the top left of the map, or scroll to **Data sources** at the bottom of the Map tab.
 
-- **Heights:** Welsh Government LiDAR 1 m terrain model, resampled for the game.
-- **Map detail:** OpenStreetMap, from the Geofabrik Wales extract. This covers lakes, streams, paths, roads, walls, woods, buildings, crags, cliffs, scree and named summits.
-- **Names:** Welsh first, with English OpenStreetMap qualifiers turned into Welsh.
+| Feed | Source |
+|---|---|
+| GB, Welsh and regional mix; carbon intensity; import factors | NESO Carbon Intensity API |
+| Output per power station (`/balancing/physical/all`, PN) | Elexon Insights |
+| Balancing actions for curtailment (`/balancing/acceptances/all`) | Elexon Insights |
+| Generation by fuel and interconnector flows (`/generation/outturn/current`) | Elexon Insights |
+| Wholesale prices (market index) | Elexon Insights |
+| Postcode lookup | postcodes.io |
 
-## Credits and licences
+All feeds were confirmed working on the live site on 29 September 2026.
 
-- Heights: Welsh Government LiDAR. Contains public sector information licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
-- Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the Open Database Licence.
-- 3D rendering: [three.js](https://github.com/mrdoob/three.js) (MIT licence).
+## Data sources and licences
 
----
+| Data | Source |
+|---|---|
+| Major sites: capacities, dates, notes | Compiled from public announcements; checked September 2026 |
+| Lines, substations, smaller generators, wind farm areas | © OpenStreetMap contributors, via Geofabrik (Open Database Licence) |
+| Historic generation mix and carbon intensity | NESO Data Portal |
+| Region boundaries (GSP regions grouped into 14 regions) | NESO Data Portal |
+| Live mix, regional and import carbon | NESO Carbon Intensity API |
+| Output, flows, balancing, prices | Elexon Insights (BMRS): contains BMRS data © Elexon Limited |
+| Connection queue figures | NESO; Knight Frank; Curvature Energy |
+| Connection queue by site | NESO TEC register (NESO Open Data Licence); locations from OpenStreetMap |
+| Official constraint costs | NESO constraint breakdown (NESO Open Data Licence) |
+| Welsh targets and progress | Welsh Government, Energy Generation and Energy Use in Wales (2026) |
+| Wind farm support schemes | LCCC Contracts for Difference register; Ofgem; developer announcements (see `data/subsidy.json`) |
 
-## Yn Gymraeg
+The open data in `data/open/` is shared under CC BY 4.0, except the connection queue file, which is ODbL because it includes OpenStreetMap-derived locations. See **Licence and credit** below. The original sources' terms also apply.
 
-Gêm darllen map. Astudia’r olygfa 3D, yna gweithia allan ble ar y map cyfuchliniau rwyt ti’n sefyll. Mae pum ffordd o chwarae: **Lefelau**, **Eryri** (33 o lefydd go iawn), **Cyfeiriannu** (20 cwrs), **Dyddiol** a **Diderfyn**.
+The map carries the required credits in its bottom corner. Check each provider's current terms before any commercial use.
 
-Mae’n gweithio ar ffôn a chyfrifiadur, a heb signal ar ôl ei hagor unwaith. Chwarae: https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/cy.html
+## Methods and caveats
+
+- **Routes show the typical direction of flow.** Electricity joins a shared pool once it's on the grid, so a route shows where power usually goes, not a fixed destination.
+- **Per-station live output is reported, not metered.** Where a station reports to Elexon, the figure is its physical notification: the output it told the grid operator it planned to produce that half-hour. Turn-down instructions are shown separately as curtailment.
+- **Some live output figures are estimates.** Where a station doesn't report to Elexon, its output is its capacity multiplied by how hard that technology is running nationally. The site panel says which method was used.
+- **Two carbon measures are used.** The history uses NESO's generation-based figures. The live figures estimate electricity consumed, including imports. They usually differ by 10 to 30 gCO₂/kWh.
+- **Future dates are targets.** They are developer or government targets and often slip. The 2030 and 2035 carbon points are targets, not forecasts.
+- **Northern Ireland** runs a separate grid shared with Ireland.
+- **OpenStreetMap is community-mapped.** Some entries are out of date.
+- **The connection queue is a list of contracts, not a forecast.** Many queued projects are never built, NESO notes some capacity is repeated across rows (repeats are counted once), and connections reform is re-ordering the queue. Sites the map can't place from their names are counted but not drawn.
+- **Switch-off prices are averages.** Payments divided by energy turned down over 30 days; wind farms turned down by less than 200 MWh are left out.
+
+## Accessibility
+
+- **Keyboard:** everything works from the keyboard. You can tab to sites, the search results and the table rows.
+- **Motion:** reduced-motion settings turn off the animated flows.
+- **Themes:** light and dark mode are supported.
+- **Language:** fully bilingual, and your choice is remembered.
+- **Table view:** a text alternative to the map for screen-reader users.
+
+## Brand files
+
+The icon, favicons and link-preview image are in the top-level folder: `logo.svg` (the mark, scalable), `icon-512.png` (for social profile pictures; it survives the round crop), `icon-192.png`, `apple-touch-icon.png`, `favicon.svg`, `favicon-32.png`, `favicon.ico`, and `social.png` (1200 × 630, the image shown when the link is shared). The mark is Britain's outline with the 400 kV grid, and a line from a wind farm in the north to a socket in the south-east: source to socket. Typeface: Barlow Semi Condensed and Barlow.
+
+If a platform still shows an old preview after you update `social.png`, ask it to refresh: LinkedIn Post Inspector, Facebook Sharing Debugger, or add `?v=3` to the image address in `src/app.html`.
+
+## Licence and credit
+
+Created by **Daniel Elwyn Thomas**.
+
+**Open data** (the CSV files in `data/open/`): shared under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). You can copy, share, adapt and use them, including commercially, if you give credit. The exception is `connection-queue-by-site.csv`, which includes locations derived from OpenStreetMap and is shared under the [Open Database Licence (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/) instead.
+
+**How to credit it:**
+
+> Data: The UK Power Flow (Daniel Elwyn Thomas), CC BY 4.0. https://delwyno.github.io/UK-Energy-Generation-Map/
+
+The licence covers the compilation (the daily tracking, matching and calculations), not the original data, which comes from NESO, Elexon and OpenStreetMap and carries their terms (see Data sources and licences). It is provided without warranty. `data/open/README.md` and `data/open/index.json` repeat this, with the exact credit line for each file.
+
+The licence for the code (everything outside `data/`) has not been chosen yet.
