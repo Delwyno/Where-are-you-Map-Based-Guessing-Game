@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="en-GB">
+<html lang="cy">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!--pwa--><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c2833"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><!--/pwa-->
-<meta name="description" content="Study the view, then find where you’re standing on the contour map. Made-up hills, 33 real places in Eryri, and orienteering. Free, in English and Welsh.">
-<meta property="og:type" content="website"><meta property="og:site_name" content="Where are you?">
-<meta property="og:title" content="Where are you? Contour map challenge"><meta property="og:description" content="Study the view, then find where you’re standing on the contour map. Made-up hills, 33 real places in Eryri, and orienteering. Free, in English and Welsh."><meta property="og:url" content="https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/"><meta property="og:locale" content="en_GB">
-<meta property="og:image" content="https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/og-image.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="A contour map of Cwm Idwal with a red map pin">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Where are you? Contour map challenge"><meta name="twitter:description" content="Study the view, then find where you’re standing on the contour map. Made-up hills, 33 real places in Eryri, and orienteering. Free, in English and Welsh."><meta name="twitter:image" content="https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/og-image.jpg">
-<title>Where are you? — contour map challenge</title>
+<!--pwa--><link rel="manifest" href="manifest-cy.webmanifest"><meta name="theme-color" content="#1c2833"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><!--/pwa-->
+<meta name="description" content="Astudia’r olygfa, yna gweithia allan ble rwyt ti’n sefyll ar y map cyfuchliniau. Bryniau dychmygol, 33 o lefydd go iawn yn Eryri, a chyfeiriannu. Am ddim, yn Gymraeg a Saesneg.">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Ble wyt ti?">
+<meta property="og:title" content="Ble wyt ti? Her map cyfuchliniau"><meta property="og:description" content="Astudia’r olygfa, yna gweithia allan ble rwyt ti’n sefyll ar y map cyfuchliniau. Bryniau dychmygol, 33 o lefydd go iawn yn Eryri, a chyfeiriannu. Am ddim, yn Gymraeg a Saesneg."><meta property="og:url" content="https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/cy.html"><meta property="og:locale" content="cy_GB">
+<meta property="og:image" content="https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/og-image.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Map cyfuchliniau o Gwm Idwal gyda phin coch">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Ble wyt ti? Her map cyfuchliniau"><meta name="twitter:description" content="Astudia’r olygfa, yna gweithia allan ble rwyt ti’n sefyll ar y map cyfuchliniau. Bryniau dychmygol, 33 o lefydd go iawn yn Eryri, a chyfeiriannu. Am ddim, yn Gymraeg a Saesneg."><meta name="twitter:image" content="https://delwyno.github.io/Where-are-you-Map-Based-Guessing-Game/og-image.jpg">
+<title>Ble wyt ti? — her map cyfuchliniau</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
@@ -165,47 +165,47 @@ kbd{font:600 12px Barlow,system-ui,sans-serif;border:1px solid var(--frame);bord
 <body>
 <main>
   <header>
-    <h1>Where are you?</h1>
-    <a class="lang" id="langLink" href="cy.html" hreflang="cy" lang="cy">Cymraeg</a>
+    <h1>Ble wyt ti?</h1>
+    <a class="lang" id="langLink" href="index.html" hreflang="en" lang="en">English</a>
   </header>
-  <p class="sub">Study the view, then work out where on the map you're standing.</p>
-  <div class="tabs" id="playTabs" role="tablist" aria-label="Game type"></div>
+  <p class="sub">Astudia’r olygfa, yna gweithia allan ble ar y map rwyt ti’n sefyll.</p>
+  <div class="tabs" id="playTabs" role="tablist" aria-label="Math o gêm"></div>
   <div class="row settings">
-    <div class="seg" id="ansWrap"><span>Answer</span><div id="modeSeg"></div></div>
-    <div class="seg" id="oposWrap"><span>My position</span><div id="oposSeg"></div></div>
-    <div class="seg" id="lvlWrap"><span>Difficulty</span><div id="levelSeg"></div></div>
+    <div class="seg" id="ansWrap"><span>Ateb</span><div id="modeSeg"></div></div>
+    <div class="seg" id="oposWrap"><span>Fy safle</span><div id="oposSeg"></div></div>
+    <div class="seg" id="lvlWrap"><span>Anhawster</span><div id="levelSeg"></div></div>
     <div class="modeinfo" id="modeInfo"></div>
-    <button class="next" id="next">New terrain</button>
+    <button class="next" id="next">Tir newydd</button>
   </div>
 
   <div class="game">
   <div class="left">
-  <div id="view"><div class="facing" aria-live="polite"><span class="compass" id="compass" aria-hidden="true">↑</span><span id="facingTxt">Facing north</span></div><div id="vlabels" aria-hidden="true"></div><div id="wxTag"></div><button id="namesBtn" type="button" aria-pressed="true">Names</button><div id="lookHint">Drag to look around</div><div id="countdown"></div><div id="viewtag"></div><button id="resetView" type="button">Face forward</button><div id="cover"><div>View hidden<small>Where were you standing?</small></div></div><div id="otoast" aria-live="polite"></div><div id="err"></div><div id="pop" role="dialog" aria-modal="false" aria-live="assertive"><div class="card"><div class="ico" id="popI"></div><h2 id="popT"></h2><div class="streak" id="popS"></div><p id="popM"></p><div class="btns" id="popB"></div></div></div></div>
-  <p class="kbd">Keyboard: <kbd>←</kbd> <kbd>→</kbd> look around, <kbd>A</kbd>–<kbd>F</kbd> choose a spot, <kbd>Enter</kbd> confirm, <kbd>N</kbd> new terrain.</p>
+  <div id="view"><div class="facing" aria-live="polite"><span class="compass" id="compass" aria-hidden="true">↑</span><span id="facingTxt">Yn wynebu’r gogledd</span></div><div id="vlabels" aria-hidden="true"></div><div id="wxTag"></div><button id="namesBtn" type="button" aria-pressed="true">Enwau</button><div id="lookHint">Llusga i edrych o gwmpas</div><div id="countdown"></div><div id="viewtag"></div><button id="resetView" type="button">Wynebu ymlaen</button><div id="cover"><div>Golygfa wedi’i chuddio<small>Ble roeddet ti’n sefyll?</small></div></div><div id="otoast" aria-live="polite"></div><div id="err"></div><div id="pop" role="dialog" aria-modal="false" aria-live="assertive"><div class="card"><div class="ico" id="popI"></div><h2 id="popT"></h2><div class="streak" id="popS"></div><p id="popM"></p><div class="btns" id="popB"></div></div></div></div>
+  <p class="kbd">Bysellfwrdd: <kbd>←</kbd> <kbd>→</kbd> edrych o gwmpas, <kbd>A</kbd>–<kbd>F</kbd> dewis man, <kbd>Enter</kbd> cadarnhau, <kbd>N</kbd> tir newydd.</p>
   </div>
   <div class="right">
   <div class="mapwrap">
-    <div id="mapBox"><canvas id="map" aria-label="Contour map with candidate positions"></canvas><div class="zoomBtns"><button id="zCompass" type="button" aria-pressed="false" aria-label="Compass: tap two points on the map to measure a bearing" title="Compass: tap two points on the map to measure a bearing"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3.2 12.3 10 10 16.8 7.7 10Z" fill="currentColor" opacity=".35"/><path d="M10 3.2 12.3 10H7.7Z" fill="#c0392b"/></svg></button><button id="zIn" type="button" aria-label="Zoom in" title="Zoom in">+</button><button id="zOut" type="button" aria-label="Zoom out" title="Zoom out">−</button><button id="zReset" type="button" aria-label="Show the whole map" title="Show the whole map">⤢</button></div></div>
-    <div class="key" aria-label="Map key">
-      <span data-k="water"><svg width="18" height="12" aria-hidden="true"><rect x="1" y="1" width="16" height="10" rx="2" style="fill:var(--water);stroke:var(--water-edge)"/></svg>Sea or lake</span>
-      <span data-k="river"><svg width="18" height="12" aria-hidden="true"><path d="M1 9C6 2 11 12 17 3" style="fill:none;stroke:var(--water-edge);stroke-width:2"/></svg>River or stream</span>
-      <span data-k="road"><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--road-casing);stroke-width:5"/><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--road);stroke-width:3"/></svg>Road</span>
-      <span data-k="conifer"><svg width="18" height="12" aria-hidden="true"><rect width="18" height="12" rx="2" style="fill:var(--wood)"/><path d="M5 9l2.5-5 2.5 5zM10 9l2.5-5 2.5 5z" style="fill:var(--tree)"/></svg>Conifer wood</span>
-      <span data-k="broadleaf"><svg width="18" height="12" aria-hidden="true"><rect width="18" height="12" rx="2" style="fill:var(--wood)"/><circle cx="6" cy="6" r="2.2" style="fill:none;stroke:var(--tree);stroke-width:1.2"/><circle cx="12.5" cy="6" r="2.2" style="fill:none;stroke:var(--tree);stroke-width:1.2"/></svg>Broadleaf wood</span>
-      <span data-k="boulders"><svg width="18" height="12" aria-hidden="true"><circle cx="5" cy="7" r="1.7" style="fill:var(--ink)"/><circle cx="10" cy="4" r="1.4" style="fill:var(--ink)"/><circle cx="13" cy="8" r="1.7" style="fill:var(--ink)"/></svg>Boulders</span>
-      <span data-k="spot"><svg width="10" height="12" aria-hidden="true"><circle cx="5" cy="6" r="1.8" style="fill:var(--ink)"/></svg>Spot height</span>
-          <span data-k="wall"><svg width="18" height="12" aria-hidden="true"><path d="M1 9L17 3" style="stroke:var(--ink);stroke-width:1"/></svg>Wall</span>
-      <span data-k="building"><svg width="12" height="12" aria-hidden="true"><rect x="2" y="3" width="8" height="6" style="fill:var(--ink)"/></svg>Building</span>
-      <span data-k="footpath"><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--path);stroke-width:1.7;stroke-dasharray:4 3"/></svg>Footpath</span>
-      <span data-k="power"><svg width="18" height="12" aria-hidden="true"><path d="M1 6H17M5 3V9M13 3V9" style="stroke:var(--ink);stroke-width:1"/></svg>Power line</span>
-      <span data-k="trig"><svg width="14" height="12" aria-hidden="true"><path d="M7 1.5L12 10H2Z" style="fill:none;stroke:var(--water-edge);stroke-width:1.4"/><circle cx="7" cy="7" r="1.3" style="fill:var(--water-edge)"/></svg>Trig point</span>
-      <span data-k="crag"><svg width="18" height="12" aria-hidden="true"><path d="M3 3v5M7 3v6M11 3v5M15 3v6" style="stroke:var(--ink);stroke-width:1"/></svg>Crag</span>
-      <span data-k="cliff"><svg width="18" height="12" aria-hidden="true"><path d="M1 4H17M3 4v5M7 4v5M11 4v5M15 4v5" style="stroke:var(--ink);stroke-width:1"/></svg>Cliff</span>
-      <span data-k="scree"><svg width="18" height="12" aria-hidden="true"><circle cx="4" cy="4" r="1" style="fill:var(--muted)"/><circle cx="10" cy="6" r="1" style="fill:var(--muted)"/><circle cx="15" cy="3" r="1" style="fill:var(--muted)"/><circle cx="7" cy="9" r="1" style="fill:var(--muted)"/><circle cx="14" cy="9" r="1" style="fill:var(--muted)"/></svg>Scree or rock</span>
-      <span data-k="rail"><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--ink);stroke-width:3"/><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--paper);stroke-width:1.2;stroke-dasharray:3 3"/></svg>Railway</span>
+    <div id="mapBox"><canvas id="map" aria-label="Map cyfuchliniau gyda’r mannau posib"></canvas><div class="zoomBtns"><button id="zCompass" type="button" aria-pressed="false" aria-label="Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant" title="Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3.2 12.3 10 10 16.8 7.7 10Z" fill="currentColor" opacity=".35"/><path d="M10 3.2 12.3 10H7.7Z" fill="#c0392b"/></svg></button><button id="zIn" type="button" aria-label="Chwyddo i mewn" title="Chwyddo i mewn">+</button><button id="zOut" type="button" aria-label="Chwyddo allan" title="Chwyddo allan">−</button><button id="zReset" type="button" aria-label="Dangos y map cyfan" title="Dangos y map cyfan">⤢</button></div></div>
+    <div class="key" aria-label="Allwedd y map">
+      <span data-k="water"><svg width="18" height="12" aria-hidden="true"><rect x="1" y="1" width="16" height="10" rx="2" style="fill:var(--water);stroke:var(--water-edge)"/></svg>Môr neu lyn</span>
+      <span data-k="river"><svg width="18" height="12" aria-hidden="true"><path d="M1 9C6 2 11 12 17 3" style="fill:none;stroke:var(--water-edge);stroke-width:2"/></svg>Afon neu nant</span>
+      <span data-k="road"><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--road-casing);stroke-width:5"/><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--road);stroke-width:3"/></svg>Ffordd</span>
+      <span data-k="conifer"><svg width="18" height="12" aria-hidden="true"><rect width="18" height="12" rx="2" style="fill:var(--wood)"/><path d="M5 9l2.5-5 2.5 5zM10 9l2.5-5 2.5 5z" style="fill:var(--tree)"/></svg>Coedwig gonwydd</span>
+      <span data-k="broadleaf"><svg width="18" height="12" aria-hidden="true"><rect width="18" height="12" rx="2" style="fill:var(--wood)"/><circle cx="6" cy="6" r="2.2" style="fill:none;stroke:var(--tree);stroke-width:1.2"/><circle cx="12.5" cy="6" r="2.2" style="fill:none;stroke:var(--tree);stroke-width:1.2"/></svg>Coed llydanddail</span>
+      <span data-k="boulders"><svg width="18" height="12" aria-hidden="true"><circle cx="5" cy="7" r="1.7" style="fill:var(--ink)"/><circle cx="10" cy="4" r="1.4" style="fill:var(--ink)"/><circle cx="13" cy="8" r="1.7" style="fill:var(--ink)"/></svg>Clogfeini</span>
+      <span data-k="spot"><svg width="10" height="12" aria-hidden="true"><circle cx="5" cy="6" r="1.8" style="fill:var(--ink)"/></svg>Pwynt uchder</span>
+          <span data-k="wall"><svg width="18" height="12" aria-hidden="true"><path d="M1 9L17 3" style="stroke:var(--ink);stroke-width:1"/></svg>Wal</span>
+      <span data-k="building"><svg width="12" height="12" aria-hidden="true"><rect x="2" y="3" width="8" height="6" style="fill:var(--ink)"/></svg>Adeilad</span>
+      <span data-k="footpath"><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--path);stroke-width:1.7;stroke-dasharray:4 3"/></svg>Llwybr troed</span>
+      <span data-k="power"><svg width="18" height="12" aria-hidden="true"><path d="M1 6H17M5 3V9M13 3V9" style="stroke:var(--ink);stroke-width:1"/></svg>Llinell bŵer</span>
+      <span data-k="trig"><svg width="14" height="12" aria-hidden="true"><path d="M7 1.5L12 10H2Z" style="fill:none;stroke:var(--water-edge);stroke-width:1.4"/><circle cx="7" cy="7" r="1.3" style="fill:var(--water-edge)"/></svg>Piler triongli</span>
+      <span data-k="crag"><svg width="18" height="12" aria-hidden="true"><path d="M3 3v5M7 3v6M11 3v5M15 3v6" style="stroke:var(--ink);stroke-width:1"/></svg>Craig</span>
+      <span data-k="cliff"><svg width="18" height="12" aria-hidden="true"><path d="M1 4H17M3 4v5M7 4v5M11 4v5M15 4v5" style="stroke:var(--ink);stroke-width:1"/></svg>Clogwyn</span>
+      <span data-k="scree"><svg width="18" height="12" aria-hidden="true"><circle cx="4" cy="4" r="1" style="fill:var(--muted)"/><circle cx="10" cy="6" r="1" style="fill:var(--muted)"/><circle cx="15" cy="3" r="1" style="fill:var(--muted)"/><circle cx="7" cy="9" r="1" style="fill:var(--muted)"/><circle cx="14" cy="9" r="1" style="fill:var(--muted)"/></svg>Sgri neu graig</span>
+      <span data-k="rail"><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--ink);stroke-width:3"/><line x1="1" y1="6" x2="17" y2="6" style="stroke:var(--paper);stroke-width:1.2;stroke-dasharray:3 3"/></svg>Rheilffordd</span>
     </div>
-    <div class="legend"><span>Contours every 10 m, grid squares 100 m</span><span id="seedTxt"></span></div>
-    <p class="credits" id="credits" hidden>Heights: Welsh Government LiDAR 1 m terrain model. Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>. Map data <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>.</p>
+    <div class="legend"><span>Cyfuchliniau bob 10 m, sgwariau grid 100 m</span><span id="seedTxt"></span></div>
+    <p class="credits" id="credits" hidden>Uchderau: model tir LiDAR 1 m Llywodraeth Cymru. Yn cynnwys gwybodaeth sector cyhoeddus a drwyddedir o dan y <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence-cymraeg/version/3/" target="_blank" rel="noopener">Drwydded Llywodraeth Agored v3.0</a>. Data’r map <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© cyfranwyr OpenStreetMap</a>.</p>
   </div>
 
   <div class="choices" id="choices"></div>
@@ -224,7 +224,7 @@ kbd{font:600 12px Barlow,system-ui,sans-serif;border:1px solid var(--frame);bord
 const $ = s => document.querySelector(s);
 let N = 161, SIZE = 1200, HALF = SIZE/2, CS = SIZE/(N-1); const CI = 10, EYE = 1.7, HFOV = 68, LAND = 6;
 const LETTERS = 'ABCDEF';
-const DIRS = [{n:'north',a:'↑',deg:0},{n:'east',a:'→',deg:90},{n:'south',a:'↓',deg:180},{n:'west',a:'←',deg:270}];
+const DIRS = [{n:'gogledd',a:'↑',deg:0},{n:'dwyrain',a:'→',deg:90},{n:'de',a:'↓',deg:180},{n:'gorllewin',a:'←',deg:270}];
 const LEVELS = {
   easy:  {spots:3,any:false,look:true, thresh:2.5,similar:false,timer:0, landmark:true, weathers:['clear','clear','evening','overcast']},
   medium:{spots:4,any:false,look:true, thresh:1.4,similar:false,timer:0, landmark:false,weathers:['clear','evening','overcast','haze','lowcloud']},
@@ -232,12 +232,12 @@ const LEVELS = {
   expert:{spots:6,any:true, look:false,thresh:0.7,similar:true, timer:10,landmark:false,weathers:['evening','overcast','haze','lowcloud','mist','mist']},
 };
 const WEATHERS = {
-  clear:   {name:'Clear',     top:'#7fa6cf',hor:'#d5dee2',sun:1.15,sunC:0xfff0d6,sunE:420,hemi:0.55,hs:0xd6e2f0,hg:0x4a4630,near:700,far:6500,maxD:2600},
-  evening: {name:'Evening',   top:'#34466f',hor:'#eeb488',sun:1.1, sunC:0xffa860,sunE:150,hemi:0.52,hs:0x9a9ac0,hg:0x3a2c22,near:700,far:6500,maxD:2600},
-  overcast:{name:'Overcast',  top:'#8a939b',hor:'#c3c8cb',sun:0.35,sunC:0xffffff,sunE:700,hemi:0.9, hs:0xdde2e6,hg:0x4a4a40,near:500,far:4800,maxD:2600},
-  haze:    {name:'Hazy',      top:'#9cb2c6',hor:'#dfe2dc',sun:0.9, sunC:0xfff4e0,sunE:500,hemi:0.6, hs:0xd6e2f0,hg:0x4a4630,near:200,far:2300,maxD:1800},
-  lowcloud:{name:'Low cloud', top:'#9aa1a6',hor:'#c2c7ca',sun:0.3, sunC:0xffffff,sunE:700,hemi:0.9, hs:0xdde2e6,hg:0x4a4a40,near:400,far:4000,maxD:2600},
-  mist:    {name:'Mist',      top:'#b8bdc0',hor:'#c6cacc',sun:0.2, sunC:0xffffff,sunE:700,hemi:0.95,hs:0xe0e4e6,hg:0x55554c,near:25, far:560, maxD:600},
+  clear:   {name:'Clir',     top:'#7fa6cf',hor:'#d5dee2',sun:1.15,sunC:0xfff0d6,sunE:420,hemi:0.55,hs:0xd6e2f0,hg:0x4a4630,near:700,far:6500,maxD:2600},
+  evening: {name:'Gyda’r nos',   top:'#34466f',hor:'#eeb488',sun:1.1, sunC:0xffa860,sunE:150,hemi:0.52,hs:0x9a9ac0,hg:0x3a2c22,near:700,far:6500,maxD:2600},
+  overcast:{name:'Cymylog',  top:'#8a939b',hor:'#c3c8cb',sun:0.35,sunC:0xffffff,sunE:700,hemi:0.9, hs:0xdde2e6,hg:0x4a4a40,near:500,far:4800,maxD:2600},
+  haze:    {name:'Tesog',      top:'#9cb2c6',hor:'#dfe2dc',sun:0.9, sunC:0xfff4e0,sunE:500,hemi:0.6, hs:0xd6e2f0,hg:0x4a4630,near:200,far:2300,maxD:1800},
+  lowcloud:{name:'Cymylau isel', top:'#9aa1a6',hor:'#c2c7ca',sun:0.3, sunC:0xffffff,sunE:700,hemi:0.9, hs:0xdde2e6,hg:0x4a4a40,near:400,far:4000,maxD:2600},
+  mist:    {name:'Niwl',      top:'#b8bdc0',hor:'#c6cacc',sun:0.2, sunC:0xffffff,sunE:700,hemi:0.95,hs:0xe0e4e6,hg:0x55554c,near:25, far:560, maxD:600},
 };
 const NB = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 
@@ -758,7 +758,7 @@ const ERY=[
 let H0=null, N0=0, REAL=null, CH=null, G=null, lakes=[], cliffs=[], rails=[], rockP=[], woodP=[], places=[], pathPts=[];
 // messages over the 3D view while a place loads, or if it can't be loaded
 function vmsg(html){ const er=$('#err'); if(!html){ if(!er.dataset.fatal) er.style.display='none'; return; } er.style.display='grid'; er.innerHTML='<div>'+html+'</div>'; }
-function loadFailMsg(id,want){ if(want&&settings.play!==want) return; vmsg(`<b>${tx('loadFail')}</b><br><small style="opacity:.8">Missing file:  eryri/${id}.json</small>`); $('#status').innerHTML=`<b>${tx('loadFail')}</b>`; }
+function loadFailMsg(id,want){ if(want&&settings.play!==want) return; vmsg(`<b>${tx('loadFail')}</b><br><small style="opacity:.8">Ffeil ar goll:  eryri/${id}.json</small>`); $('#status').innerHTML=`<b>${tx('loadFail')}</b>`; }
 const ERYC={}, PREP={}, FARC={}; let ENEXT=null;
 // colours of the 12 km surround for a place (they never change), worked out once
 function farColours(id,CHh,CHm,n,half){
@@ -1686,7 +1686,7 @@ function drawMap(){
   const nx=pad+inner-18, ny=pad+26;
   ctx.fillStyle=col.paper; ctx.beginPath(); ctx.arc(nx,ny-2,15,0,Math.PI*2); ctx.fill();
   ctx.fillStyle=col.ink; ctx.beginPath(); ctx.moveTo(nx,ny-14); ctx.lineTo(nx+6,ny+2); ctx.lineTo(nx,ny-2); ctx.lineTo(nx-6,ny+2); ctx.closePath(); ctx.fill();
-  ctx.font='800 11px "Barlow Condensed", sans-serif'; ctx.fillText('N',nx,ny+8);
+  ctx.font='800 11px "Barlow Condensed", sans-serif'; ctx.fillText('G',nx,ny+8);
   const rev=S.phase==='revealed';
   ctx.save(); ctx.beginPath(); ctx.rect(pad,pad,inner,inner); ctx.clip();
   if(rev&&S.viewPos){
@@ -1755,7 +1755,7 @@ function drawMap(){
         ctx.fillStyle='rgba(28,40,51,.88)'; ctx.fillRect(mx-tw/2,my-10,tw,20); ctx.fillStyle='#fff'; ctx.fillText(t,mx,my+0.5);
         ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.arc(bx,by,4,0,Math.PI*2); ctx.fill(); }
       ctx.fillStyle='#c0392b'; ctx.strokeStyle=col.paper; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(ax,ay,5,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
-    if(!CMP.b){ ctx.font='600 12px Barlow, system-ui, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; const t='Tap two points to measure a bearing', tw=ctx.measureText(t).width+12;
+    if(!CMP.b){ ctx.font='600 12px Barlow, system-ui, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; const t='Tapia ddau bwynt i fesur cyfeiriant', tw=ctx.measureText(t).width+12;
       ctx.fillStyle='rgba(28,40,51,.85)'; ctx.fillRect(pad+6,pad+6,tw,22); ctx.fillStyle='#fff'; ctx.fillText(t,pad+12,pad+17.5); }
   }
   ctx.restore();
@@ -1770,7 +1770,7 @@ function updateCompass(){
   const b=((Math.round(S.deg+S.yaw)%360)+360)%360;
   $('#compass').style.transform=`rotate(${S.yaw}deg)`;
   if(S.play==='orient'){ $('#facingTxt').innerHTML=tx('oHead',{b:fmtB(b)}); $('#resetView').style.display='none'; $('#lookHint').style.display=S.phase==='course'&&!S.dragged?'block':'none'; return; }
-  $('#facingTxt').innerHTML='Facing '+S.dir.n+(Math.abs(S.yaw)>2||CMP.on?`<br><small style="font:400 12px Barlow,system-ui,sans-serif;opacity:.85">Looking ${String(b).padStart(3,'0')}°</small>`:'');
+  $('#facingTxt').innerHTML='Yn wynebu’r '+S.dir.n+(Math.abs(S.yaw)>2||CMP.on?`<br><small style="font:400 12px Barlow,system-ui,sans-serif;opacity:.85">Yn edrych ${String(b).padStart(3,'0')}°</small>`:'');
   $('#resetView').style.display=(canLook()&&(Math.abs(S.yaw)>2||Math.abs(S.pitch-(S.pitch0??S.pitch))>2))?'block':'none';
   $('#lookHint').style.display=(canLook()&&!S.dragged&&S.phase==='guess')?'block':'none';
 }
@@ -1786,30 +1786,30 @@ function updateChoices(){
   if(S.mode==='spots'){
     S.pts.forEach((p,i)=>{
       const b=document.createElement('button'); b.className='choice'; b.textContent=LETTERS[i];
-      b.setAttribute('aria-label',(S.phase==='guess'?'Guess ':'Show view from ')+LETTERS[i]);
+      b.setAttribute('aria-label',(S.phase==='guess'?'Dyfalu ':'Dangos yr olygfa o ')+LETTERS[i]);
       if(S.phase==='guess'&&S.wrong&&S.wrong.has(i)){ b.classList.add('bad'); b.disabled=true; }
       if(S.phase==='revealed'){ if(i===S.trueIdx)b.classList.add('good'); else if(i===S.picked)b.classList.add('bad'); if(S.viewPos&&p.x===S.viewPos.x&&p.z===S.viewPos.z)b.classList.add('viewing'); }
       b.onclick=()=>{ if(S.phase==='guess') choose(i); else { viewFrom(p.x,p.z); drawMap(); updateChoices(); setTag(); } };
       box.appendChild(b);
     });
   } else if(S.phase==='guess'){
-    if(S.guess){ const b=document.createElement('button'); b.className='confirm'; b.textContent='Confirm guess'; b.onclick=confirmGuess; box.appendChild(b); }
-    else { const p=document.createElement('p'); p.className='hint'; p.textContent='Tap the map where you think you\'re standing.'; box.appendChild(p); }
+    if(S.guess){ const b=document.createElement('button'); b.className='confirm'; b.textContent='Cadarnhau’r dyfaliad'; b.onclick=confirmGuess; box.appendChild(b); }
+    else { const p=document.createElement('p'); p.className='hint'; p.textContent='Tapia’r map lle rwyt ti’n meddwl rwyt ti’n sefyll.'; box.appendChild(p); }
   }
 }
 function updateStats(){
   if(S.play==='orient'){ const n=Object.keys(olv.best).length, st=Object.values(olv.stars).reduce((a,b)=>a+b,0); $('#stats').textContent=n?tx('oStats',{n,t:OLV.length,s:st}):tx('oStats0'); return; }
-  if(S.play==='levels'){ $('#stats').textContent=`Best level reached: ${lvl.best}.`; return; }
+  if(S.play==='levels'){ $('#stats').textContent=`Lefel orau: ${lvl.best}.`; return; }
   if(S.play==='eryri'){ const n=Object.keys(estats.seen).length, st=estats;
     $('#stats').textContent = S.mode==='free'
-      ? (st.fPlayed ? `Average ${Math.round(st.fDist/st.fPlayed)} m over ${st.fPlayed} round${st.fPlayed>1?'s':''}. Closest ${Math.round(st.fBest)} m. ${n} of ${ERY.length} places seen.` : `${ERY.length} real places in Eryri. Drop a pin where you think you're standing.`)
-      : (st.played ? `${st.correct} of ${st.played} correct. Current streak ${st.streak}, best ${st.best}. ${n} of ${ERY.length} places seen.` : `${ERY.length} real places in Eryri, from the valley floor to the Carneddau in mist.`);
+      ? (st.fPlayed ? `Cyfartaledd ${Math.round(st.fDist/st.fPlayed)} m dros ${st.fPlayed} rownd. Agosaf ${Math.round(st.fBest)} m. Wedi gweld ${n} o ${ERY.length} lle.` : `${ERY.length} o lefydd go iawn yn Eryri. Rho bin lle rwyt ti’n meddwl rwyt ti’n sefyll.`)
+      : (st.played ? `${st.correct} o ${st.played} yn gywir. Rhediad presennol ${st.streak}, gorau ${st.best}. Wedi gweld ${n} o ${ERY.length} lle.` : `${ERY.length} o lefydd go iawn yn Eryri, o lawr y dyffryn i’r Carneddau yn y niwl.`);
     return; }
-  if(S.play==='daily'){ $('#stats').textContent = dstats.played ? `Daily streak ${dstats.streak} day${dstats.streak===1?'':'s'}. Best score ${dstats.best} of 500. Days played ${dstats.played}.` : 'A new puzzle every day, the same for everyone.'; return; }
+  if(S.play==='daily'){ $('#stats').textContent = dstats.played ? `Rhediad dyddiol: ${dstats.streak} diwrnod. Sgôr orau: ${dstats.best} o 500. Diwrnodau wedi’u chwarae: ${dstats.played}.` : 'Pos newydd bob dydd, yr un fath i bawb.'; return; }
   if(S.mode==='free'){
-    $('#stats').textContent = stats.fPlayed ? `Average ${Math.round(stats.fDist/stats.fPlayed)} m over ${stats.fPlayed} round${stats.fPlayed>1?'s':''}. Closest ${Math.round(stats.fBest)} m. ${stats.fScore} points in total.` : 'No guesses yet.';
+    $('#stats').textContent = stats.fPlayed ? `Cyfartaledd ${Math.round(stats.fDist/stats.fPlayed)} m dros ${stats.fPlayed} rownd. Agosaf ${Math.round(stats.fBest)} m. ${stats.fScore} pwynt i gyd.` : 'Dim dyfaliadau eto.';
   } else {
-    $('#stats').textContent = stats.played ? `${stats.correct} of ${stats.played} correct. Current streak ${stats.streak}, best ${stats.best}.` : 'No guesses yet.';
+    $('#stats').textContent = stats.played ? `${stats.correct} o ${stats.played} yn gywir. Rhediad presennol ${stats.streak}, gorau ${stats.best}.` : 'Dim dyfaliadau eto.';
   }
 }
 function setTag(){
@@ -1817,8 +1817,8 @@ function setTag(){
   if(S.phase!=='revealed'||!S.viewPos){ tag.style.display='none'; return; }
   tag.style.display='block';
   const vp=S.viewPos, i=S.pts.findIndex(p=>p.x===vp.x&&p.z===vp.z);
-  if(vp.x===S.truePos.x&&vp.z===S.truePos.z) tag.textContent= S.mode==='spots'?`Your view, from ${LETTERS[S.trueIdx]}`:'Your view';
-  else tag.textContent= i>=0?`View from ${LETTERS[i]}`:`View from ${gridRef(vp.x,vp.z)}`;
+  if(vp.x===S.truePos.x&&vp.z===S.truePos.z) tag.textContent= S.mode==='spots'?`Dy olygfa di, o ${LETTERS[S.trueIdx]}`:'Dy olygfa di';
+  else tag.textContent= i>=0?`Golygfa o ${LETTERS[i]}`:`Golygfa o ${gridRef(vp.x,vp.z)}`;
 }
 function reveal(){
   S.phase='revealed'; clearInterval(S.timerId); S.hidden=false;
@@ -1827,7 +1827,7 @@ function reveal(){
   save(); updateStats();
   viewFrom(S.truePos.x,S.truePos.z); drawMap(); updateChoices(); setTag(); updateTop();
 }
-const TX={prep:'Getting the next place ready…',f_xs:'Stream crossing',f_wc:'Wall corner',f_pb:'Path bend',f_kn:'Knoll',oHead:'Heading ${b}',oHint:'Drag to look · tap the ground to move',oIntro:'Visit the controls in order. Tap the ground in the view to move there.',oCtrl:'Control ${n} of ${t}',oFinish:'Finish',f_pj:'Path junction',f_su:'Summit',f_le:'End of the lake',f_sj:'Stream junction',f_cf:'Foot of the crag',oPeek:'Where am I? (+30 s)',oSky:'Tap on the ground to move',oEdge:'That’s off the edge of the map',oFar:'Too far: up to ${m} m at a time',oWater:'You can’t cross water',oSteep:'Too steep: find another way',oBlock:'You can’t go that way',oPunch:'Control ${n} ✓',oDone:'Course complete!',oTime:'Your time ${t} · par ${p}',oRoute:'See my route',oTry:'Try again',oLevel:'Course ${n}',oShown:'position shown',oHidden:'position hidden',oNext:'Next: course ${n}',oAgain:'Run it again',oRestart:'Restart course',oStats:'${n} of ${t} courses finished · ${s} ★',oStats0:'Orienteering: 20 courses, getting harder.',oFail:'Couldn’t set a course here. Try again.',cmp:'Compass: tap two points on the map to measure a bearing',cmpHint:'Tap two points to measure a bearing',loading:'Loading ${n}…',loadFail:'Couldn’t load this place. Check your connection and try again.',correct:'Correct!',start:'That’s the start of a streak.',row:'That’s ${n} in a row!',best:' A new best.',again:'Got it on another go. Your streak starts again from the next one.',lvl:'Level ${n} complete.',wrongT:'Wrong — try again',wrongM:'You weren’t standing at ${L}.',ends:' That ends your streak of ${n}.',lvlWrong:'You were at ${T}, not ${L}.',tryA:'Try again',show:'Show answer',look:'Look around',where:'See where I was',retry:'<b>Not ${L}.</b><small>Try another spot, or <button class="linkbtn" id="showAns" type="button">show the answer</button>.</small>',out:'${d} m out, for ${p} points.'};
+const TX={prep:'Wrthi’n paratoi’r lle nesaf…',f_xs:'Croesfan nant',f_wc:'Cornel wal',f_pb:'Tro yn y llwybr',f_kn:'Bryncyn',oHead:'Cyfeiriad ${b}',oHint:'Llusga i edrych · tapia’r tir i symud',oIntro:'Ymwela â’r pwyntiau yn eu trefn. Tapia’r tir yn yr olygfa i symud yno.',oCtrl:'Pwynt ${n} o ${t}',oFinish:'Diwedd',f_pj:'Cyffordd llwybrau',f_su:'Copa',f_le:'Pen y llyn',f_sj:'Cymer nentydd',f_cf:'Troed y graig',oPeek:'Ble ydw i? (+30 e)',oSky:'Tapia ar y tir i symud',oEdge:'Mae hynny oddi ar ymyl y map',oFar:'Rhy bell: hyd at ${m} m ar y tro',oWater:'Does dim modd croesi dŵr',oSteep:'Rhy serth: chwilia am ffordd arall',oBlock:'Does dim modd mynd y ffordd honno',oPunch:'Pwynt ${n} ✓',oDone:'Cwrs wedi’i gwblhau!',oTime:'Dy amser ${t} · par ${p}',oRoute:'Gweld fy llwybr',oTry:'Rho gynnig arall',oLevel:'Cwrs ${n}',oShown:'safle i’w weld',oHidden:'safle wedi’i guddio',oNext:'Nesaf: cwrs ${n}',oAgain:'Rhedeg eto',oRestart:'Ailddechrau’r cwrs',oStats:'${n} o ${t} cwrs wedi’u gorffen · ${s} ★',oStats0:'Cyfeiriannu: 20 cwrs, yn mynd yn anoddach.',oFail:'Methu gosod cwrs yma. Rho gynnig arall.',cmp:'Cwmpawd: tapia ddau bwynt ar y map i fesur cyfeiriant',cmpHint:'Tapia ddau bwynt i fesur cyfeiriant',loading:'Wrthi’n llwytho ${n}…',loadFail:'Methu llwytho’r lle hwn. Gwiria dy gysylltiad a rho gynnig arall.',correct:'Cywir!',start:'Dyna ddechrau rhediad.',row:'Dyna ${n} yn olynol!',best:' Dy orau erioed.',again:'Cywir y tro yma. Mae dy rediad yn ailddechrau o’r un nesaf.',lvl:'Lefel ${n} wedi’i chwblhau.',wrongT:'Anghywir — rho gynnig arall',wrongM:'Doeddet ti ddim yn sefyll yn ${L}.',ends:' Dyna ddiwedd dy rediad o ${n}.',lvlWrong:'Roeddet ti yn ${T}, nid ${L}.',tryA:'Rho gynnig arall',show:'Dangos yr ateb',look:'Edrych o gwmpas',where:'Gweld ble roeddwn i',retry:'<b>Nid ${L}.</b><small>Rho gynnig ar fan arall, neu <button class="linkbtn" id="showAns" type="button">dangos yr ateb</button>.</small>',out:'${d} m allan, am ${p} pwynt.'};
 const tx=(k,o={})=>TX[k].replace(/\$\{(\w+)\}/g,(m,v)=>o[v]);
 function showPop(kind,icon,title,streak,msg,btns){
   const p=$('#pop'); p.className='on '+kind; $('#popI').textContent=icon; $('#popT').textContent=title;
@@ -1842,8 +1842,8 @@ const nextBtn=()=>[$('#next').textContent,()=>$('#next').click(),true];
 function spotStatus(ok,i){
   const ref=gridRef(S.truePos.x,S.truePos.z);
   return ok
-    ? `<b>Spot on — you were standing at ${LETTERS[S.trueIdx]}.</b><small>Grid reference ${ref}. Tap any point, or anywhere on the map, to compare views.</small>`
-    : `<b>Not quite. You were at ${LETTERS[S.trueIdx]}, not ${LETTERS[i]}.</b><small>Grid reference ${ref}. Tap ${LETTERS[i]} to see what you'd have seen from there.</small>`;
+    ? `<b>Yn union — roeddet ti’n sefyll yn ${LETTERS[S.trueIdx]}.</b><small>Cyfeirnod grid ${ref}. Tapia unrhyw fan, neu unrhyw le ar y map, i gymharu golygfeydd.</small>`
+    : `<b>Ddim cweit. Roeddet ti yn ${LETTERS[S.trueIdx]}, nid ${LETTERS[i]}.</b><small>Cyfeirnod grid ${ref}. Tapia ${LETTERS[i]} i weld beth fyddet ti wedi’i weld o fan’na.</small>`;
 }
 function giveUp(){ hidePop(); if(S.phase!=='guess') return; S.gaveUp=true;
   $('#status').innerHTML=spotStatus(false,S.picked); reveal(); }
@@ -1864,7 +1864,7 @@ function choose(i){
     store('way-levels',lvl);
   } else if(first){ st.played++; if(ok){st.correct++;st.streak++;st.best=Math.max(st.best,st.streak);} else st.streak=0; }
   $('#status').innerHTML = spotStatus(ok,i);
-  if(S.play==='levels') $('#status').innerHTML = (ok?`<b>Level ${lvl.level-1} complete!</b>`:`<b>Not this time — have another go at level ${lvl.level}.</b>`)+$('#status').innerHTML.replace('<b>','<small><b>').replace('</b>','</b></small>');
+  if(S.play==='levels') $('#status').innerHTML = (ok?`<b>Lefel ${lvl.level-1} wedi’i chwblhau!</b>`:`<b>Dim y tro hwn — rho gynnig arall ar lefel ${lvl.level}.</b>`)+$('#status').innerHTML.replace('<b>','<small><b>').replace('</b>','</b></small>');
   reveal();
   if(S.play==='levels'){
     if(ok) showPop('good','✓',tx('correct'),'',tx('lvl',{n:lvl.level-1}),[nextBtn(),[tx('look'),null]]);
@@ -1886,8 +1886,8 @@ function confirmGuess(){
       dstats.streak = dstats.last===todayKey(-1) ? dstats.streak+1 : 1; dstats.last=ds.date; dstats.best=Math.max(dstats.best,tot); dstats.played++; store('way-dstats',dstats); }
     store('way-daily',ds);
   } else { const st=S.play==='eryri'?estats:stats; st.fPlayed++; st.fDist+=d; st.fScore+=score; st.fBest = st.fBest==null?d:Math.min(st.fBest,d); }
-  const verdict = d<40?'Spot on!':d<120?'Close.':d<300?'In the right area.':'Some way off.';
-  $('#status').innerHTML=`<b>${verdict} You were ${Math.round(d)} m out, for ${score} points.</b><small>You were standing at ${gridRef(S.truePos.x,S.truePos.z)}. Tap anywhere on the map to see the view from there.</small>`;
+  const verdict = d<40?'Yn union!':d<120?'Agos.':d<300?'Yn yr ardal iawn.':'Cryn bellter i ffwrdd.';
+  $('#status').innerHTML=`<b>${verdict} Roeddet ti ${Math.round(d)} m allan, am ${score} pwynt.</b><small>Roeddet ti’n sefyll yn ${gridRef(S.truePos.x,S.truePos.z)}. Tapia unrhyw le ar y map i weld yr olygfa o fan’na.</small>`;
   if(ds&&ds.done) showDailySummary(ds);
   reveal();
   if(!(ds&&ds.done)) showPop(d<120?'good':d<300?'mid':'bad',d<120?'✓':'⌖',verdict,'',tx('out',{d:Math.round(d),p:score}),[nextBtn(),[tx('look'),null]]);
@@ -1946,9 +1946,9 @@ function newRound(){
   const truePt=pts[0]; S.truePos=truePt;
   for(let k=pts.length-1;k>0;k--){const r=Math.floor(rand()*(k+1));[pts[k],pts[r]]=[pts[r],pts[k]];}
   S.pts = mode==='spots' ? pts : []; S.trueIdx=pts.indexOf(truePt);
-  $('#seedTxt').textContent=REAL?gridRef(0,0).split(' ')[0]+' '+String(Math.floor(REAL.Ec%100000/1000))+String(Math.floor(REAL.Nc%100000/1000)):'Terrain #'+seed.toString(36);
+  $('#seedTxt').textContent=REAL?gridRef(0,0).split(' ')[0]+' '+String(Math.floor(REAL.Ec%100000/1000))+String(Math.floor(REAL.Nc%100000/1000)):'Tir #'+seed.toString(36);
   $('#credits').hidden=!REAL;
-  $('#status').innerHTML= mode==='spots' ? '<small>Which lettered spot gives this view?</small>' : '<small>Place your guess anywhere on the map.</small>';
+  $('#status').innerHTML= mode==='spots' ? '<small>Pa fan sy’n rhoi’r olygfa hon?</small>' : '<small>Rho dy ddyfaliad unrhyw le ar y map.</small>';
   $('#cover').style.display='none';
   const has={water:shore.length>0,river:rivers.length>0,road:roads.length>0,conifer:trees.some(t=>t.t==='c'),broadleaf:trees.some(t=>t.t==='d'),boulders:boulders.length>0,spot:spots.length>0,wall:walls.length>0,building:buildings.length>0,footpath:footpaths.length>0,power:!!power,trig:!!trig,crag:hasCrag,cliff:cliffs.length>0,scree:rockP.length>0,rail:rails.length>0};
   if(REAL){ has.water=lakes.length>0; has.conifer=woodP.some(w=>w.t==='c'); has.broadleaf=woodP.some(w=>w.t==='d'); has.boulders=false; }
@@ -2033,17 +2033,17 @@ $('#mapBox').addEventListener('click',e=>{   // on the box: while zoomed the box
   v.addEventListener('pointerup',end); v.addEventListener('pointercancel',end);
   $('#resetView').addEventListener('click',()=>{ S.yaw=0; if(S.pitch0!=null) S.pitch=S.pitch0; placeCamera(); drawMap(); });
 })();
-function fmtDate(key){ const [y,m,d]=key.split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtDate(key){ const [y,m,d]=key.split('-').map(Number); return d+' '+['Ion','Chwef','Maw','Ebr','Mai','Meh','Gorff','Awst','Medi','Hyd','Tach','Rhag'][m-1]+' '+y; }
 function showDailySummary(ds){
   const tot=ds.scores.reduce((a,b)=>a+b,0), tiles=ds.scores.map(tile).join('');
-  const rows=ds.scores.map((p,k)=>`<tr><td>Round ${k+1}</td><td>${tile(p)}</td><td>${ds.dists[k]} m</td><td>${p} pts</td></tr>`).join('');
-  $('#status').innerHTML=`<div class="daily-sum"><small>Daily puzzle, ${fmtDate(ds.date)}</small><div class="tot">${tot} / 500</div><div class="tiles">${tiles}</div><table>${rows}</table>
-    <button class="sharebtn" id="shareBtn" type="button">Share result</button><small id="shareMsg">A new puzzle arrives at midnight. You're looking at round 5.</small></div>`;
+  const rows=ds.scores.map((p,k)=>`<tr><td>Rownd ${k+1}</td><td>${tile(p)}</td><td>${ds.dists[k]} m</td><td>${p} pwynt</td></tr>`).join('');
+  $('#status').innerHTML=`<div class="daily-sum"><small>Pos dyddiol, ${fmtDate(ds.date)}</small><div class="tot">${tot} / 500</div><div class="tiles">${tiles}</div><table>${rows}</table>
+    <button class="sharebtn" id="shareBtn" type="button">Rhannu’r canlyniad</button><small id="shareMsg">Mae pos newydd yn cyrraedd am hanner nos. Rwyt ti’n edrych ar rownd 5.</small></div>`;
   $('#shareBtn').onclick=async()=>{
     const url=location.href.split(/[?#]/)[0];
-    const text=`Where are you? Daily, ${fmtDate(ds.date)}\n${tiles} ${tot}/500\n${url}`;
+    const text=`Ble wyt ti? Dyddiol, ${fmtDate(ds.date)}\n${tiles} ${tot}/500\n${url}`;
     if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
-    try{ await navigator.clipboard.writeText(text); $('#shareMsg').textContent='Copied — paste it anywhere.'; }
+    try{ await navigator.clipboard.writeText(text); $('#shareMsg').textContent='Wedi’i gopïo — gludia fe unrhyw le.'; }
     catch(e){ $('#shareMsg').style.whiteSpace='pre-line'; $('#shareMsg').textContent=text; }
   };
 }
@@ -2060,26 +2060,26 @@ function updateTop(){
     const pk=$('#oPick'); if(pk) pk.onchange=()=>{ olv.cur=+pk.value; store('way-orient',olv); S.oAdvance=false; newRound(); };
     nx.textContent = S.phase==='done' ? (olv.cur<OLV.length?tx('oNext',{n:olv.cur+1}):tx('oAgain')) : tx('oRestart'); nx.disabled=false; return; }
   if(play==='eryri'){
-    const cur=ERY.find(e=>e.id===S.eLast), opts=`<option value="random"${settings.eplace==='random'?' selected':''}>Random place</option>`+ERY.map(e=>`<option value="${e.id}"${settings.eplace===e.id?' selected':''}>${e.name}${estats.seen[e.id]?' ✓':''}</option>`).join('');
-    mi.innerHTML=`<b>${cur?cur.name:''}</b><select id="eryPick" aria-label="Choose an Eryri place">${opts}</select>`;
+    const cur=ERY.find(e=>e.id===S.eLast), opts=`<option value="random"${settings.eplace==='random'?' selected':''}>Lle ar hap</option>`+ERY.map(e=>`<option value="${e.id}"${settings.eplace===e.id?' selected':''}>${e.name}${estats.seen[e.id]?' ✓':''}</option>`).join('');
+    mi.innerHTML=`<b>${cur?cur.name:''}</b><select id="eryPick" aria-label="Dewis lle yn Eryri">${opts}</select>`;
     const pk=$('#eryPick'); pk.onchange=()=>{ settings.eplace=pk.value; save(); S.phase=null; newRound(); };
-    nx.textContent = settings.eplace==='random' ? 'New place' : 'New view'; nx.disabled=false;
+    nx.textContent = settings.eplace==='random' ? 'Lle newydd' : 'Golygfa newydd'; nx.disabled=false;
   } else if(play==='levels'){
     const shown = rev&&S.passed ? lvl.level-1 : lvl.level;
-    mi.innerHTML=`<b>Level ${shown}</b><span>${D.spots} spots${lvl.best>1?`, best ${lvl.best}`:''}</span><button class="linkbtn" id="restartLv" type="button">${lvl.level>1?'Restart':''}</button>`;
-    const rb=$('#restartLv'); if(rb) rb.onclick=()=>{ if(rb.dataset.arm){ lvl={level:1,best:lvl.best,attempt:0}; store('way-levels',lvl); newRound(); } else { rb.dataset.arm=1; rb.textContent='Tap again to restart from level 1'; setTimeout(()=>{ if(rb.isConnected){ delete rb.dataset.arm; rb.textContent='Restart'; } },3000); } };
-    nx.textContent = !rev ? 'Make your guess' : S.passed ? `Next: level ${lvl.level}` : 'Try again';
+    mi.innerHTML=`<b>Lefel ${shown}</b><span>${D.spots} man${lvl.best>1?`, gorau ${lvl.best}`:''}</span><button class="linkbtn" id="restartLv" type="button">${lvl.level>1?'Ailddechrau':''}</button>`;
+    const rb=$('#restartLv'); if(rb) rb.onclick=()=>{ if(rb.dataset.arm){ lvl={level:1,best:lvl.best,attempt:0}; store('way-levels',lvl); newRound(); } else { rb.dataset.arm=1; rb.textContent='Tapia eto i ailddechrau o lefel 1'; setTimeout(()=>{ if(rb.isConnected){ delete rb.dataset.arm; rb.textContent='Ailddechrau'; } },3000); } };
+    nx.textContent = !rev ? 'Gwna dy ddyfaliad' : S.passed ? `Nesaf: lefel ${lvl.level}` : 'Rho gynnig arall';
     nx.disabled=!rev;
   } else if(play==='daily'){
     const ds=dailyState(), tot=ds.scores.reduce((a,b)=>a+b,0);
-    mi.innerHTML=`<b>Daily, ${fmtDate(ds.date)}</b><span>${ds.done?'Complete':`Round ${Math.min(5,S.dr+1)} of 5`}, ${tot} points</span>`;
-    nx.textContent = ds.done ? 'Come back tomorrow' : !rev ? `Round ${S.dr+1} of 5` : 'Next round';
+    mi.innerHTML=`<b>Dyddiol, ${fmtDate(ds.date)}</b><span>${ds.done?'Wedi gorffen':`Rownd ${Math.min(5,S.dr+1)} o 5`}, ${tot} pwynt</span>`;
+    nx.textContent = ds.done ? 'Tyrd yn ôl yfory' : !rev ? `Rownd ${S.dr+1} o 5` : 'Rownd nesaf';
     nx.disabled = ds.done || !rev;
-  } else { nx.textContent='New terrain'; nx.disabled=false; }
+  } else { nx.textContent='Tir newydd'; nx.disabled=false; }
 }
 function buildTabs(){
   const el=$('#playTabs'); el.innerHTML='';
-  [['levels','Levels','Gets harder each level'],['eryri','Eryri','Real places, at random'],['orient','Orienteering','Find the controls'],['daily','Daily','Same puzzle for everyone'],['unlimited','Unlimited','Pick your own settings']].forEach(([v,l,sub])=>{
+  [['levels','Lefelau','Anos gyda phob lefel'],['eryri','Eryri','Lleoedd go iawn, ar hap'],['orient','Cyfeiriannu','Dod o hyd i’r pwyntiau'],['daily','Dyddiol','Yr un pos i bawb'],['unlimited','Diderfyn','Dewis dy osodiadau dy hun']].forEach(([v,l,sub])=>{
     const b=document.createElement('button'); b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected',String(settings.play===v));
     b.innerHTML=`${l}<small>${sub}</small>`; b.onclick=()=>{ if(settings.play===v) return; settings.play=v; save(); buildTabs(); newRound(); }; el.appendChild(b);
   });
@@ -2100,24 +2100,24 @@ document.addEventListener('keydown',e=>{
   if(S.phase==='guess'&&S.mode==='spots'){ const i=LETTERS.indexOf(k.toUpperCase()); if(i>=0&&i<S.pts.length){ choose(i); } return; }
   if(k==='Enter'&&S.phase==='guess'&&S.mode==='free'&&S.guess){ confirmGuess(); }
 });
-if(window.matchMedia&&matchMedia('(hover:hover) and (pointer:fine)').matches) $('#lookHint').textContent='Drag or use ← → to look around';
+if(window.matchMedia&&matchMedia('(hover:hover) and (pointer:fine)').matches) $('#lookHint').textContent='Llusga neu defnyddia ← → i edrych o gwmpas';
 const PWA=true;   // the website registers a service worker so the game works offline
 if(PWA&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 $('#namesBtn').onclick=()=>{ settings.names=!settings.names; save(); viewLabels(); };
 (function(){ const a=$('#langLink'); if(!a) return; a.addEventListener('click',()=>store('way-lang',a.hreflang));
   // first visit with a Welsh-language browser: open the Welsh version
-  try{ if(true&&!localStorage.getItem('way-lang')&&a.hreflang==='cy'&&/^cy\b/i.test(navigator.language||'')){ store('way-lang','cy'); location.replace(a.href); } }catch(e){}
+  try{ if(false&&!localStorage.getItem('way-lang')&&a.hreflang==='cy'&&/^cy\b/i.test(navigator.language||'')){ store('way-lang','cy'); location.replace(a.href); } }catch(e){}
 })();
 buildTabs();
-buildSeg($('#modeSeg'),[['spots','Spots'],['free','Anywhere']],'mode');
+buildSeg($('#modeSeg'),[['spots','Mannau'],['free','Unrhyw le']],'mode');
 (function oposSeg(){   // changes straight away, without restarting the course
   const el=$('#oposSeg'); el.innerHTML='';
-  [["level", "By course"], ["on", "Always"], ["off", "Never"]].forEach(([v,l])=>{ const b=document.createElement('button'); b.type='button'; b.textContent=l; b.setAttribute('aria-pressed',String((settings.opos||'level')===v));
+  [["level", "Yn ôl y cwrs"], ["on", "Bob amser"], ["off", "Byth"]].forEach(([v,l])=>{ const b=document.createElement('button'); b.type='button'; b.textContent=l; b.setAttribute('aria-pressed',String((settings.opos||'level')===v));
     b.onclick=()=>{ settings.opos=v; save(); oposSeg(); if(S.play==='orient'&&S.oc&&OL){ S.oc.show=oShow(OL); kiteVis(); drawMap(); updateChoices(); updateTop(); } }; el.appendChild(b); });
 })();
-buildSeg($('#levelSeg'),[['easy','Easy'],['medium','Medium'],['hard','Hard'],['expert','Expert']],'level');
+buildSeg($('#levelSeg'),[['easy','Hawdd'],['medium','Canolig'],['hard','Anodd'],['expert','Arbenigol']],'level');
 try{ if(!window.THREE) throw new Error('no three'); initThree(); }
-catch(e){ renderer=null; const er=$('#err'); er.dataset.fatal='1'; er.style.display='grid'; er.textContent='The 3D view could not load. Check your connection and reload the page.'; }
+catch(e){ renderer=null; const er=$('#err'); er.dataset.fatal='1'; er.style.display='grid'; er.textContent='Methodd yr olygfa 3D â llwytho. Gwiria dy gysylltiad ac ail-lwytha’r dudalen.'; }
 let rt; const onResize=()=>{clearTimeout(rt);rt=setTimeout(()=>{render();mapApply();drawMap();},60);};
 if(window.ResizeObserver) new ResizeObserver(onResize).observe($('#view')); else window.addEventListener('resize',onResize);
 try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{render();drawMap();}); }catch(e){}
